@@ -12,6 +12,128 @@ from src.database.connection import get_db_connection
 movies_bp = Blueprint('movies', __name__, url_prefix='/api/movies')
 
 
+def check_for_duplicate_item(cursor, category_id, category_type, title, director=None, year=None, author=None):
+    """
+    Check if an item with similar details already exists in the database.
+    Returns (is_duplicate, existing_item_data) tuple.
+    """
+    try:
+        # Normalize input data
+        title_norm = title.strip().lower() if title else None
+        director_norm = director.strip().lower() if director else None
+        author_norm = author.strip().lower() if author else None
+        
+        if not title_norm:
+            return False, None
+        
+        # Different matching strategies based on category type
+        if category_type == 'movies':
+            # For movies, try multiple matching strategies in order of specificity
+            
+            # Strategy 1: title + year (most specific)
+            if year and year > 1900:  # Reasonable year check
+                cursor.execute('''
+                    SELECT id, name, title, director, year, url, price
+                    FROM items 
+                    WHERE category_id = ? 
+                      AND LOWER(TRIM(title)) = ? 
+                      AND year = ?
+                ''', (category_id, title_norm, year))
+                result = cursor.fetchone()
+                if result:
+                    return True, {
+                        'id': result[0], 'name': result[1], 'title': result[2],
+                        'director': result[3], 'year': result[4], 'url': result[5], 'price': result[6],
+                        'match_reason': f'Same title and year ({year})'
+                    }
+            
+            # Strategy 2: title + director
+            if director_norm:
+                cursor.execute('''
+                    SELECT id, name, title, director, year, url, price
+                    FROM items 
+                    WHERE category_id = ? 
+                      AND LOWER(TRIM(title)) = ? 
+                      AND LOWER(TRIM(director)) = ?
+                ''', (category_id, title_norm, director_norm))
+                result = cursor.fetchone()
+                if result:
+                    return True, {
+                        'id': result[0], 'name': result[1], 'title': result[2],
+                        'director': result[3], 'year': result[4], 'url': result[5], 'price': result[6],
+                        'match_reason': f'Same title and director ({director})'
+                    }
+            
+            # Strategy 3: title only (less specific, but still useful)
+            cursor.execute('''
+                SELECT id, name, title, director, year, url, price
+                FROM items 
+                WHERE category_id = ? 
+                  AND LOWER(TRIM(title)) = ?
+            ''', (category_id, title_norm))
+            result = cursor.fetchone()
+            if result:
+                return True, {
+                    'id': result[0], 'name': result[1], 'title': result[2],
+                    'director': result[3], 'year': result[4], 'url': result[5], 'price': result[6],
+                    'match_reason': 'Same title (but different details)'
+                }
+        
+        elif category_type == 'books':
+            # For books, title + author is the most reliable match
+            if author_norm:
+                cursor.execute('''
+                    SELECT id, name, title, author, url, price
+                    FROM items 
+                    WHERE category_id = ? 
+                      AND LOWER(TRIM(title)) = ? 
+                      AND LOWER(TRIM(author)) = ?
+                ''', (category_id, title_norm, author_norm))
+                result = cursor.fetchone()
+                if result:
+                    return True, {
+                        'id': result[0], 'name': result[1], 'title': result[2],
+                        'author': result[3], 'url': result[4], 'price': result[5],
+                        'match_reason': f'Same title and author ({author})'
+                    }
+            
+            # Fallback: title only for books
+            cursor.execute('''
+                SELECT id, name, title, author, url, price
+                FROM items 
+                WHERE category_id = ? 
+                  AND LOWER(TRIM(title)) = ?
+            ''', (category_id, title_norm))
+            result = cursor.fetchone()
+            if result:
+                return True, {
+                    'id': result[0], 'name': result[1], 'title': result[2],
+                    'author': result[3], 'url': result[4], 'price': result[5],
+                    'match_reason': 'Same title (but potentially different author)'
+                }
+        
+        else:  # general category
+            # For general items, check by name (which might contain the title)
+            cursor.execute('''
+                SELECT id, name, url, price
+                FROM items 
+                WHERE category_id = ? 
+                  AND LOWER(TRIM(name)) = ?
+            ''', (category_id, title_norm))
+            result = cursor.fetchone()
+            if result:
+                return True, {
+                    'id': result[0], 'name': result[1], 'url': result[2], 'price': result[3],
+                    'match_reason': 'Same name'
+                }
+        
+        return False, None
+        
+    except Exception as e:
+        print(f"Error checking for duplicate: {e}")
+        return False, None
+
+
 @movies_bp.route('/search', methods=['POST'])
 def search_movies():
     """Search for movies using Apple Store API."""
@@ -122,11 +244,37 @@ def preview_csv():
                     except ValueError:
                         pass  # Ignore invalid year, we'll note it
                 
-                # Search for movie on Apple Store
-                search_results = search_apple_movies(title)
+                # Check for duplicate items in the database
+                is_duplicate, existing_item = check_for_duplicate_item(
+                    cursor, category_id, category_type, title, director, year
+                )
                 
-                # Log debug info for CSV preview
-                if search_results.get('debug'):
+                if is_duplicate:
+                    # Item already exists - mark as duplicate
+                    status = 'duplicate'
+                    best_match = None
+                    search_results = {'movies': []}
+                    error_msg = None
+                else:
+                    # No duplicate found - proceed with Apple Store search
+                    search_results = search_apple_movies(title)
+                    
+                    # Determine status based on search results
+                    if search_results.get('movies') and len(search_results['movies']) > 0:
+                        status = 'found'
+                        best_match = search_results['movies'][0]  # First result is best match
+                        error_msg = None
+                    elif search_results.get('rate_limited'):
+                        status = 'pending'
+                        best_match = None
+                        error_msg = search_results.get('error')
+                    else:
+                        status = 'not_found'
+                        best_match = None
+                        error_msg = search_results.get('error') or f"No results found for '{title}'"
+                
+                # Log debug info for CSV preview (only if not duplicate)
+                if not is_duplicate and search_results.get('debug'):
                     debug_info = search_results['debug']
                     print(f"🔍 DEBUG CSV Import - Row {i+1} ({title}):")
                     print(f"  Original query: {debug_info['original_query']}")
@@ -139,18 +287,8 @@ def preview_csv():
                         if api_call['error']:
                             print(f"    Error: {api_call['error']}")
                 
-                # Determine status based on search results
-                if search_results.get('movies') and len(search_results['movies']) > 0:
-                    status = 'found'
-                    best_match = search_results['movies'][0]  # First result is best match
-                elif search_results.get('rate_limited'):
-                    status = 'pending'
-                    best_match = None
-                else:
-                    status = 'not_found'
-                    best_match = None
-                
-                preview_results.append({
+                # Build result object
+                result_obj = {
                     'row_index': i,
                     'csv_data': {
                         'title': title,
@@ -158,11 +296,18 @@ def preview_csv():
                         'year': year
                     },
                     'status': status,
-                    'error': search_results.get('error') if status in ['not_found', 'pending'] else None,
+                    'error': error_msg,
                     'best_match': best_match,
                     'search_results': search_results.get('movies', []),
-                    'debug': search_results.get('debug')
-                })
+                    'debug': search_results.get('debug') if not is_duplicate else None
+                }
+                
+                # Add duplicate information if applicable
+                if is_duplicate:
+                    result_obj['existing_item'] = existing_item
+                    result_obj['duplicate_reason'] = existing_item.get('match_reason', 'Duplicate found')
+                
+                preview_results.append(result_obj)
                 
             except Exception as e:
                 preview_results.append({
@@ -196,6 +341,7 @@ def preview_csv():
         not_found_movies = len([r for r in preview_results if r['status'] == 'not_found'])
         pending_movies = len([r for r in preview_results if r['status'] == 'pending'])
         error_movies = len([r for r in preview_results if r['status'] == 'error'])
+        duplicate_movies = len([r for r in preview_results if r['status'] == 'duplicate'])
         
         return jsonify({
             'success': True,
@@ -206,7 +352,8 @@ def preview_csv():
                 'found': found_movies,
                 'not_found': not_found_movies,
                 'pending': pending_movies,
-                'errors': error_movies
+                'errors': error_movies,
+                'duplicates': duplicate_movies
             },
             'preview_results': preview_results
         })

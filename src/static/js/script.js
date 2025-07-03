@@ -1070,6 +1070,10 @@ class PriceNest {
                             <i class="fas fa-clock"></i>
                             <span>${summary.pending || 0} pending search</span>
                         </div>
+                        <div class="stat duplicate">
+                            <i class="fas fa-copy"></i>
+                            <span>${summary.duplicates || 0} duplicates</span>
+                        </div>
                         <div class="stat error">
                             <i class="fas fa-exclamation-circle"></i>
                             <span>${needsAttention} need attention</span>
@@ -1090,6 +1094,9 @@ class PriceNest {
                         </button>
                         <button type="button" class="filter-btn pending ${currentFilter === 'pending' ? 'active' : ''}" data-filter="pending">
                             <i class="fas fa-clock"></i> Pending (${summary.pending || 0})
+                        </button>
+                        <button type="button" class="filter-btn duplicate ${currentFilter === 'duplicate' ? 'active' : ''}" data-filter="duplicate">
+                            <i class="fas fa-copy"></i> Duplicates (${summary.duplicates || 0})
                         </button>
                         <button type="button" class="filter-btn not-found ${currentFilter === 'not_found' ? 'active' : ''}" data-filter="not_found">
                             <i class="fas fa-search"></i> Not Found (${summary.not_found})
@@ -1150,6 +1157,11 @@ class PriceNest {
                         const movieIndex = parseInt(button.getAttribute('data-movie-index'));
                         console.log('Delete movie clicked for index:', movieIndex);
                         this.deleteMovieFromPreview(movieIndex);
+                    } else if (e.target.closest('.override-duplicate-btn')) {
+                        const button = e.target.closest('.override-duplicate-btn');
+                        const movieIndex = parseInt(button.getAttribute('data-movie-index'));
+                        console.log('Override duplicate clicked for index:', movieIndex);
+                        this.overrideDuplicateMovie(movieIndex);
                     }
                 });
             }
@@ -1275,13 +1287,58 @@ class PriceNest {
         }
     }
     
+    overrideDuplicateMovie(movieIndex) {
+        if (!this.csvPreviewData || !this.csvPreviewData.preview_results[movieIndex]) {
+            this.showError('Invalid movie selection');
+            return;
+        }
+        
+        const result = this.csvPreviewData.preview_results[movieIndex];
+        
+        if (result.status !== 'duplicate') {
+            this.showError('This item is not marked as a duplicate');
+            return;
+        }
+        
+        const existingItem = result.existing_item;
+        const csvData = result.csv_data;
+        
+        const confirmMessage = `Are you sure you want to import "${csvData.title}" even though it appears to be a duplicate of the existing item "${existingItem.title || existingItem.name}"?\n\nThis will create a duplicate entry in your collection.`;
+        
+        if (confirm(confirmMessage)) {
+            // Change status to 'found' and create a mock best match for import
+            result.status = 'found';
+            result.best_match = {
+                title: csvData.title,
+                director: csvData.director || null,
+                year: csvData.year || null,
+                price: 0.00, // Default price - user can edit later
+                url: `https://tv.apple.com/search?term=${encodeURIComponent(csvData.title)}`,
+                priceSource: 'manual_override',
+                name: csvData.title + (csvData.year ? ` (${csvData.year})` : '')
+            };
+            
+            // Clear duplicate-specific data
+            delete result.existing_item;
+            delete result.duplicate_reason;
+            
+            console.log('Override duplicate:', result);
+            
+            // Re-render the preview to show the updated status
+            this.showCsvPreviewResults(this.csvPreviewData, true);
+            
+            this.showSuccess(`"${csvData.title}" will now be imported despite being a duplicate`);
+        }
+    }
+    
     calculateSummaryStats(results) {
         const stats = {
             total: 0,
             found: 0,
             not_found: 0,
             pending: 0,
-            errors: 0
+            errors: 0,
+            duplicates: 0
         };
         
         results.forEach(result => {
@@ -1291,6 +1348,7 @@ class PriceNest {
                 else if (result.status === 'not_found') stats.not_found++;
                 else if (result.status === 'pending') stats.pending++;
                 else if (result.status === 'error') stats.errors++;
+                else if (result.status === 'duplicate') stats.duplicates++;
             }
         });
         
@@ -1427,6 +1485,40 @@ class PriceNest {
                             </button>
                             <button type="button" class="btn btn-small btn-danger delete-movie-btn" 
                                     data-movie-index="${index}">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+                break;
+                
+            case 'duplicate':
+                statusIcon = '<i class="fas fa-copy"></i>';
+                statusClass = 'preview-duplicate';
+                const existingItem = result.existing_item;
+                matchDisplay = `
+                    <div class="duplicate-movie">
+                        <div class="duplicate-info">
+                            <span class="duplicate-reason">${result.duplicate_reason}</span>
+                            <div class="existing-item-details">
+                                <strong>Existing: ${existingItem.title || existingItem.name}</strong>
+                                ${existingItem.director ? `<span class="director">by ${existingItem.director}</span>` : ''}
+                                ${existingItem.author ? `<span class="author">by ${existingItem.author}</span>` : ''}
+                                ${existingItem.year ? `<span class="year">(${existingItem.year})</span>` : ''}
+                                <span class="price">£${existingItem.price.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <div class="duplicate-actions">
+                            <button type="button" class="btn btn-small btn-warning override-duplicate-btn" 
+                                    data-movie-index="${index}" title="Import anyway (creates duplicate)">
+                                <i class="fas fa-exclamation-triangle"></i> Import Anyway
+                            </button>
+                            <button type="button" class="btn btn-small btn-success add-manually-btn" 
+                                    data-movie-index="${index}" title="Add different movie manually">
+                                <i class="fas fa-plus"></i> Add Different
+                            </button>
+                            <button type="button" class="btn btn-small btn-danger delete-movie-btn" 
+                                    data-movie-index="${index}" title="Remove from import">
                                 <i class="fas fa-trash"></i> Remove
                             </button>
                         </div>
