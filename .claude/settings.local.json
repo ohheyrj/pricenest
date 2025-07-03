@@ -20,7 +20,11 @@
       "Bash(curl:*)",
       "Bash(podman ps:*)",
       "Bash(rg:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(git checkout:*)",
+      "Bash(python:*)"
     ],
     "deny": []
   }
