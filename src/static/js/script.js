@@ -2315,9 +2315,13 @@ class PriceNest {
             return;
         }
         
+        // Render categories as a grid of blocks
+        this.categoriesContainer.innerHTML = '<div class="categories-grid"></div>';
+        const grid = this.categoriesContainer.querySelector('.categories-grid');
+        
         this.categories.forEach((category, categoryIndex) => {
             const categoryElement = this.createCategoryElement(category, categoryIndex);
-            this.categoriesContainer.appendChild(categoryElement);
+            grid.appendChild(categoryElement);
         });
     }
     
@@ -2341,87 +2345,140 @@ class PriceNest {
     
     createCategoryElement(category, categoryIndex) {
         const categoryDiv = document.createElement('div');
-        categoryDiv.className = 'category collapsed';  // Start collapsed
+        categoryDiv.className = 'category-block';
         categoryDiv.dataset.categoryIndex = categoryIndex;
         
         const boughtCount = category.items.filter(item => item.bought).length;
         const totalCount = category.items.length;
         const totalValue = category.items.reduce((sum, item) => sum + (item.bought ? 0 : item.price), 0);
         
+        // Get icon based on category type
+        const getIcon = (type) => {
+            switch(type) {
+                case 'books': return 'fas fa-book';
+                case 'movies': return 'fas fa-film';
+                default: return 'fas fa-list';
+            }
+        };
+        
         categoryDiv.innerHTML = `
-            <div class="category-header" onclick="app.toggleCategory(${categoryIndex})">
-                <div class="category-info">
-                    <div class="category-title-row">
-                        <h2 class="category-title">${category.name}</h2>
-                        <i class="fas fa-chevron-down category-toggle"></i>
+            <div class="category-block-content" onclick="app.openCategoryView(${categoryIndex})">
+                <div class="category-icon">
+                    <i class="${getIcon(category.type)}"></i>
+                </div>
+                <h3 class="category-name">${category.name}</h3>
+                <div class="category-type">${category.type.charAt(0).toUpperCase() + category.type.slice(1)}</div>
+                <div class="category-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">${totalCount}</span>
+                        <span class="stat-label">Items</span>
                     </div>
-                    <div class="category-summary">
-                        <span class="item-count">${totalCount} item${totalCount !== 1 ? 's' : ''}</span>
-                        <span class="bought-count">${boughtCount} purchased</span>
-                        ${totalValue > 0 ? `<span class="total-value">£${totalValue.toFixed(2)} remaining</span>` : ''}
+                    <div class="stat-item">
+                        <span class="stat-number">${boughtCount}</span>
+                        <span class="stat-label">Bought</span>
                     </div>
                 </div>
-            </div>
-            <div class="category-content">
-                <div class="category-actions">
-                    <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); app.openItemModal(${categoryIndex})">
-                        <i class="fas fa-plus"></i> Add Item
-                    </button>
-                    ${category.bookLookupEnabled ? `
-                        <button class="btn btn-success btn-small" onclick="event.stopPropagation(); app.openKoboModal(${categoryIndex})">
-                            <i class="fas fa-book"></i> Add from Books
-                        </button>
-                        <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); app.refreshAllPrices(${categoryIndex})">
-                            <i class="fas fa-sync"></i> Refresh Prices
-                        </button>
-                    ` : ''}
-                    ${category.type === 'movies' ? `
-                        <button class="btn btn-success btn-small" onclick="event.stopPropagation(); app.openMovieModal(${categoryIndex})">
-                            <i class="fas fa-film"></i> Add from Movies
-                        </button>
-                        <button class="btn btn-primary btn-small" onclick="event.stopPropagation(); app.openDirectManualAddModal(${categoryIndex})">
-                            <i class="fas fa-plus"></i> Add Manually
-                        </button>
-                        <button class="btn btn-info btn-small" onclick="event.stopPropagation(); app.openCsvImportModal(${categoryIndex})">
-                            <i class="fas fa-file-csv"></i> Import CSV
-                        </button>
-                    ` : ''}
-                    <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); app.openCategoryModal(${categoryIndex})">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); app.deleteCategory(${categoryIndex})">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                </div>
-                <div class="category-items">
-                    ${this.createItemsSection(category, categoryIndex)}
-                </div>
+                ${totalValue > 0 ? `<div class="category-value">£${totalValue.toFixed(2)}</div>` : ''}
             </div>
         `;
         
         return categoryDiv;
     }
     
-    toggleCategory(categoryIndex) {
-        const categoryElement = document.querySelector(`[data-category-index="${categoryIndex}"]`);
-        if (!categoryElement) return;
+    openCategoryView(categoryIndex) {
+        // Store the current category for detailed view
+        this.currentCategoryIndex = categoryIndex;
+        const category = this.categories[categoryIndex];
         
-        const isCollapsed = categoryElement.classList.contains('collapsed');
-        const toggleIcon = categoryElement.querySelector('.category-toggle');
+        // Update the main container to show detailed category view
+        const container = document.getElementById('categories-container');
+        container.innerHTML = `
+            <div class="category-detail-view">
+                <div class="category-detail-header">
+                    <button class="btn btn-secondary back-btn" onclick="app.backToCategories()">
+                        <i class="fas fa-arrow-left"></i> Back to Categories
+                    </button>
+                    <div class="category-detail-info">
+                        <h1><i class="${this.getCategoryIcon(category.type)}"></i> ${category.name}</h1>
+                        <span class="category-type-badge">${category.type.charAt(0).toUpperCase() + category.type.slice(1)}</span>
+                    </div>
+                    <div class="view-toggle">
+                        <button class="btn btn-small view-toggle-btn active" data-view="grid" onclick="app.toggleItemView('grid')">
+                            <i class="fas fa-th"></i> Grid
+                        </button>
+                        <button class="btn btn-small view-toggle-btn" data-view="list" onclick="app.toggleItemView('list')">
+                            <i class="fas fa-list"></i> List
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="category-actions">
+                    <button class="btn btn-primary" onclick="app.openItemModal(${categoryIndex})">
+                        <i class="fas fa-plus"></i> Add Item
+                    </button>
+                    ${category.bookLookupEnabled ? `
+                        <button class="btn btn-success" onclick="app.openKoboModal(${categoryIndex})">
+                            <i class="fas fa-book"></i> Add from Books
+                        </button>
+                        <button class="btn btn-secondary" onclick="app.refreshAllPrices(${categoryIndex})">
+                            <i class="fas fa-sync"></i> Refresh Prices
+                        </button>
+                    ` : ''}
+                    ${category.type === 'movies' ? `
+                        <button class="btn btn-success" onclick="app.openMovieModal(${categoryIndex})">
+                            <i class="fas fa-film"></i> Add from Movies
+                        </button>
+                        <button class="btn btn-primary" onclick="app.openDirectManualAddModal(${categoryIndex})">
+                            <i class="fas fa-plus"></i> Add Manually
+                        </button>
+                        <button class="btn btn-info" onclick="app.openCsvImportModal(${categoryIndex})">
+                            <i class="fas fa-file-csv"></i> Import CSV
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-secondary" onclick="app.openCategoryModal(${categoryIndex})">
+                        <i class="fas fa-edit"></i> Edit Category
+                    </button>
+                    <button class="btn btn-danger" onclick="app.deleteCategory(${categoryIndex})">
+                        <i class="fas fa-trash"></i> Delete Category
+                    </button>
+                </div>
+                
+                <div class="category-items grid-view" id="category-items-container">
+                    ${category.items.length > 0 ? this.createItemsSection(category, categoryIndex) : '<div class="empty-state"><p>No items yet. Click "Add Item" to get started!</p></div>'}
+                </div>
+            </div>
+        `;
+    }
+    
+    backToCategories() {
+        // Return to the main categories grid view
+        this.render();
+    }
+    
+    toggleItemView(view) {
+        const container = document.getElementById('category-items-container');
+        const toggleBtns = document.querySelectorAll('.view-toggle-btn');
         
-        if (isCollapsed) {
-            // Expand
-            categoryElement.classList.remove('collapsed');
-            categoryElement.classList.add('expanded');
-            toggleIcon.classList.remove('fa-chevron-down');
-            toggleIcon.classList.add('fa-chevron-up');
-        } else {
-            // Collapse
-            categoryElement.classList.remove('expanded');
-            categoryElement.classList.add('collapsed');
-            toggleIcon.classList.remove('fa-chevron-up');
-            toggleIcon.classList.add('fa-chevron-down');
+        // Update active button
+        toggleBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === view);
+        });
+        
+        // Update container class
+        container.className = view === 'grid' ? 'category-items grid-view' : 'category-items list-view';
+    }
+    
+    getCategoryIcon(type) {
+        switch(type) {
+            case 'books': return 'fas fa-book';
+            case 'movies': return 'fas fa-film';
+            default: return 'fas fa-list';
         }
+    }
+    
+    toggleCategory(categoryIndex) {
+        // Legacy method - now redirects to new category view
+        this.openCategoryView(categoryIndex);
     }
     
     createItemsSection(category, categoryIndex) {
@@ -2490,50 +2547,92 @@ class PriceNest {
             </div>
         ` : '';
         
+        // Get artwork URL or placeholder
+        const artworkUrl = item.artworkUrl || item.imageUrl || null;
+        
         return `
-            <div class="item ${item.bought ? 'bought' : ''}">
-                <div class="item-header">
-                    <div>
-                        ${this.formatItemTitle(item)}
+            <div class="item-card ${item.bought ? 'bought' : ''}">
+                <!-- Artwork column for list view -->
+                <div class="item-artwork">
+                    ${artworkUrl ? 
+                        `<img src="${artworkUrl}" alt="${item.title || item.name}" onerror="this.style.display='none'">` : 
+                        `<div class="artwork-placeholder"><i class="fas ${this.getItemIcon(item)}"></i></div>`
+                    }
+                </div>
+                
+                <!-- Main info column -->
+                <div class="item-info">
+                    <div class="item-title">${item.title || item.name}</div>
+                    <div class="item-subtitle">
                         <a href="${item.url}" target="_blank" class="item-url" title="${item.url}">
                             <i class="fas fa-external-link-alt"></i> View Item
                         </a>
+                    </div>
+                    
+                    <!-- Grid view additional info -->
+                    <div class="grid-only-info">
                         <div class="price-update-info">
                             Last updated: ${lastUpdated}
                             ${isKoboItem ? '<i class="fas fa-book" title="Kobo item"></i>' : ''}
                         </div>
-                    </div>
-                    <div>
-                        <div class="item-price">
-                            £${item.price.toFixed(2)} ${priceChangeHtml}
-                            ${item.priceSource ? this.getPriceSourceIndicator(item.priceSource) : ''}
-                        </div>
+                        ${priceHistoryHtml}
                     </div>
                 </div>
-                ${priceHistoryHtml}
+                
+                <!-- Details column for list view -->
+                <div class="item-details">
+                    ${item.year ? `<span class="item-year">${item.year}</span>` : ''}
+                    ${item.director ? `<span class="item-director">Dir: ${item.director}</span>` : ''}
+                    ${item.author ? `<span class="item-author">By: ${item.author}</span>` : ''}
+                </div>
+                
+                <!-- Price column -->
+                <div class="item-price-cell">
+                    <div class="item-price">
+                        £${item.price.toFixed(2)}
+                        ${priceChangeHtml}
+                        ${item.priceSource ? this.getPriceSourceIndicator(item.priceSource) : ''}
+                    </div>
+                </div>
+                
+                <!-- Actions column -->
                 <div class="item-actions">
                     <button class="btn ${item.bought ? 'btn-secondary' : 'btn-success'} btn-small" 
-                            onclick="app.toggleItemBought(${categoryIndex}, ${itemIndex})">
-                        <i class="fas ${item.bought ? 'fa-undo' : 'fa-check'}"></i> 
-                        ${item.bought ? 'Mark Unbought' : 'Mark Bought'}
+                            onclick="app.toggleItemBought(${categoryIndex}, ${itemIndex})"
+                            title="${item.bought ? 'Mark as not purchased' : 'Mark as purchased'}">
+                        <i class="fas ${item.bought ? 'fa-undo' : 'fa-check'}"></i>
+                        <span class="btn-text">${item.bought ? 'Unbought' : 'Bought'}</span>
                     </button>
                     <button class="btn btn-secondary btn-small" 
-                            onclick="app.openItemModal(${categoryIndex}, ${itemIndex})">
-                        <i class="fas fa-edit"></i> Edit
+                            onclick="app.openItemModal(${categoryIndex}, ${itemIndex})"
+                            title="Edit item">
+                        <i class="fas fa-edit"></i>
+                        <span class="btn-text">Edit</span>
                     </button>
                     ${isKoboItem ? `
                         <button class="btn btn-secondary btn-small refresh-price-btn" 
-                                onclick="app.refreshItemPrice(${categoryIndex}, ${itemIndex})">
-                            <i class="fas fa-sync"></i> Refresh
+                                onclick="app.refreshItemPrice(${categoryIndex}, ${itemIndex})"
+                                title="Refresh price">
+                            <i class="fas fa-sync"></i>
+                            <span class="btn-text">Refresh</span>
                         </button>
                     ` : ''}
                     <button class="btn btn-danger btn-small" 
-                            onclick="app.deleteItem(${categoryIndex}, ${itemIndex})">
-                        <i class="fas fa-trash"></i> Delete
+                            onclick="app.deleteItem(${categoryIndex}, ${itemIndex})"
+                            title="Delete item">
+                        <i class="fas fa-trash"></i>
+                        <span class="btn-text">Delete</span>
                     </button>
                 </div>
             </div>
         `;
+    }
+    
+    getItemIcon(item) {
+        if (item.title && item.director) return 'fa-film'; // Movie
+        if (item.title && item.author) return 'fa-book'; // Book
+        if (item.url && item.url.includes('kobo.com')) return 'fa-book'; // Kobo book
+        return 'fa-shopping-cart'; // Generic item
     }
 }
 
