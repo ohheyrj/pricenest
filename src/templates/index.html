@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PriceNest</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-home"></i> PriceNest</h1>
+            <div class="header-actions">
+                <button class="btn btn-info" id="process-pending-btn" style="display: none;">
+                    <i class="fas fa-sync"></i> Process Pending
+                </button>
+                <button class="btn btn-secondary" id="settings-btn">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="btn btn-primary" id="add-category-btn">
+                    <i class="fas fa-plus"></i> Add Category
+                </button>
+            </div>
+        </header>
+
+        <main id="categories-container">
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>Loading your categories...</h3>
+                <p>Please wait while we fetch your saved items</p>
+            </div>
+        </main>
+
+        <div id="category-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="category-modal-title">Add Category</h2>
+                <form id="category-form">
+                    <input type="text" id="category-name" placeholder="Category name (e.g., Books, Films, Electronics)" required>
+                    
+                    <div class="setting-item">
+                        <label for="category-type">Category Type:</label>
+                        <select id="category-type">
+                            <option value="general">General Items</option>
+                            <option value="books">Books</option>
+                            <option value="movies">Movies</option>
+                        </select>
+                        <p class="setting-description">Choose the type of items this category will contain. Books get title/author fields, movies get director/year fields.</p>
+                    </div>
+                    
+                    <div class="category-settings-section">
+                        <h3>Category Settings</h3>
+                        <div class="setting-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="category-book-lookup" />
+                                <span class="checkmark"></span>
+                                Enable book search for this category
+                            </label>
+                            <p class="setting-description">When enabled, you can search for books and add them automatically with pricing information.</p>
+                        </div>
+                        
+                        <div class="setting-item" id="category-book-source-setting">
+                            <label for="category-book-source">Book Search Source:</label>
+                            <select id="category-book-source">
+                                <option value="auto">Auto (Try Kobo first, fallback to Google Books)</option>
+                                <option value="google_books">Google Books API only</option>
+                                <option value="kobo">Kobo UK only</option>
+                            </select>
+                            <p class="setting-description">Choose which service to use for book searches in this category.</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-category">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="item-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="item-modal-title">Add Item</h2>
+                <form id="item-form">
+                    <input type="text" id="item-name" placeholder="Item name" required>
+                    
+                    <!-- Book-specific fields (shown for book categories) -->
+                    <div id="book-fields" style="display: none;">
+                        <input type="text" id="item-title" placeholder="Book title">
+                        <input type="text" id="item-author" placeholder="Author">
+                    </div>
+                    
+                    <!-- Movie-specific fields (shown for movie categories) -->
+                    <div id="movie-fields" style="display: none;">
+                        <input type="text" id="item-title-movie" placeholder="Movie title">
+                        <input type="text" id="item-director" placeholder="Director">
+                        <input type="number" id="item-year" placeholder="Year" min="1900" max="2030">
+                    </div>
+                    
+                    <input type="url" id="item-url" placeholder="Item URL" required>
+                    <input type="number" id="item-price" placeholder="Current price" step="0.01" min="0" required>
+                    <div class="kobo-search-section">
+                        <hr>
+                        <h3><i class="fas fa-book"></i> Search Kobo UK</h3>
+                        <div class="kobo-search-form">
+                            <input type="text" id="kobo-search-query" placeholder="Search for book title...">
+                            <button type="button" class="btn btn-secondary" id="kobo-search-btn">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                        <div id="kobo-search-results" class="search-results"></div>
+                    </div>
+                    
+                    <div class="movie-search-section" style="display: none;">
+                        <hr>
+                        <h3><i class="fas fa-film"></i> Search Apple Store</h3>
+                        <div class="movie-search-form">
+                            <input type="text" id="movie-search-query" placeholder="Search for movie title...">
+                            <button type="button" class="btn btn-secondary" id="movie-search-btn">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                        <div id="movie-search-results" class="search-results"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-item">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="kobo-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2><i class="fas fa-book"></i> Search Books</h2>
+                <div class="kobo-search-form">
+                    <input type="text" id="kobo-modal-search-query" placeholder="Search for book title...">
+                    <button type="button" class="btn btn-primary" id="kobo-modal-search-btn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                <div id="kobo-modal-search-results" class="search-results"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-kobo">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="movie-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2><i class="fas fa-film"></i> Search Movies</h2>
+                <div class="movie-search-form">
+                    <input type="text" id="movie-modal-search-query" placeholder="Search for movie title...">
+                    <button type="button" class="btn btn-primary" id="movie-modal-search-btn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                <div id="movie-modal-search-results" class="search-results"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-movie">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="csv-import-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2><i class="fas fa-file-csv"></i> Import Movies from CSV</h2>
+                
+                <div class="csv-info">
+                    <h4>CSV Format Requirements:</h4>
+                    <ul>
+                        <li><strong>Required:</strong> <code>title</code> column</li>
+                        <li><strong>Optional:</strong> <code>director</code>, <code>year</code> columns</li>
+                        <li>File must be UTF-8 encoded</li>
+                        <li>First row should contain column headers</li>
+                    </ul>
+                    
+                    <div class="csv-example">
+                        <h5>Example CSV:</h5>
+                        <pre>title,director,year
+The Matrix,Lilly Wachowski & Lana Wachowski,1999
+Inception,Christopher Nolan,2010
+Interstellar,Christopher Nolan,2014</pre>
+                    </div>
+                </div>
+                
+                <form id="csv-import-form" enctype="multipart/form-data">
+                    <div class="file-upload-area">
+                        <input type="file" id="csv-file-input" accept=".csv" required>
+                        <label for="csv-file-input" class="file-upload-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Choose CSV file or drag and drop</span>
+                        </label>
+                    </div>
+                    
+                    <div id="csv-progress" class="progress-section" style="display: none;">
+                        <div class="progress-bar">
+                            <div id="csv-progress-fill" class="progress-fill"></div>
+                        </div>
+                        <div id="csv-progress-text">Processing...</div>
+                    </div>
+                    
+                    <div id="csv-results" class="import-results" style="display: none;"></div>
+                    
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary" id="csv-import-btn">
+                            <i class="fas fa-upload"></i> Import Movies
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="cancel-csv-import">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2><i class="fas fa-cog"></i> Settings</h2>
+                <form id="settings-form">
+                    <div class="settings-section">
+                        <h3>Book Lookup</h3>
+                        <div class="setting-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enable-book-lookup" />
+                                <span class="checkmark"></span>
+                                Enable automatic book search and pricing
+                            </label>
+                            <p class="setting-description">When enabled, you can search for books and get automatic pricing information.</p>
+                        </div>
+                        
+                        <div class="setting-item" id="book-source-setting">
+                            <label for="book-lookup-source">Book Search Source:</label>
+                            <select id="book-lookup-source">
+                                <option value="auto">Auto (Try Kobo first, fallback to Google Books)</option>
+                                <option value="google_books">Google Books API only</option>
+                                <option value="kobo">Kobo UK only (may not work due to blocking)</option>
+                                <option value="openlibrary">Open Library (coming soon)</option>
+                                <option value="worldcat">WorldCat (coming soon)</option>
+                            </select>
+                            <p class="setting-description">Choose which service to use for book searches. Auto mode provides the best results.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Database</h3>
+                        <div class="setting-item">
+                            <label for="database-info">Current Database:</label>
+                            <div id="database-info" class="info-display">Loading...</div>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-settings">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

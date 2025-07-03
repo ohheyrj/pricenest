@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(npm start)",
+      "Bash(lsof:*)",
+      "Bash(sqlite3:*)",
+      "Bash(pkill:*)",
+      "Bash(rm:*)",
+      "Bash(devenv:*)",
+      "Bash(python test:*)",
+      "Bash(podman exec:*)",
+      "Bash(podman compose:*)",
+      "Bash(podman compose up:*)",
+      "Bash(podman logs:*)",
+      "Bash(grep:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(python run_tests.py:*)",
+      "Bash(curl:*)",
+      "Bash(podman ps:*)",
+      "Bash(rg:*)",
+      "Bash(node:*)"
+    ],
+    "deny": []
+  }
+}
