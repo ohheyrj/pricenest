@@ -59,12 +59,13 @@ class APIClient {
     }
 
     // Items
-    async createItem(categoryId, name, url, price, title = null, author = null, director = null, year = null) {
+    async createItem(categoryId, name, url, price, title = null, author = null, director = null, year = null, trackId = null) {
         const body = { name, url, price };
         if (title) body.title = title;
         if (author) body.author = author;
         if (director) body.director = director;
         if (year) body.year = year;
+        if (trackId) body.trackId = trackId;
         
         return await this.request(`/categories/${categoryId}/items`, {
             method: 'POST',
@@ -103,9 +104,10 @@ class APIClient {
         });
     }
 
-    async getPriceHistory(id) {
-        return await this.request(`/items/${id}/history`);
+    async getItemPriceHistory(id) {
+        return await this.request(`/items/${id}/price-history`);
     }
+
 
     // Books
     async searchBooks(query, source = 'auto') {
@@ -2299,7 +2301,8 @@ class PriceNest {
                     movie.title, 
                     null, // author (not used for movies)
                     movie.director,
-                    movie.year
+                    movie.year,
+                    movie.trackId  // Include iTunes track ID for accurate price refresh
                 );
                 newItem.priceSource = movie.priceSource; // Add price source to the item
                 this.categories[this.currentCategoryIndex].items.push(newItem);
@@ -2314,18 +2317,30 @@ class PriceNest {
     
     async refreshItemPrice(categoryIndex, itemIndex) {
         const item = this.categories[categoryIndex].items[itemIndex];
-        if (!item.url.includes('kobo.com')) {
-            alert('Price refresh is only supported for Kobo items');
+        const category = this.categories[categoryIndex];
+        
+        // Check if price refresh is supported for this category type
+        const isKoboItem = item.url.includes('kobo.com');
+        const canRefreshPrice = isKoboItem || category.type === 'movies' || category.type === 'books';
+        
+        if (!canRefreshPrice) {
+            alert('Price refresh is only supported for book and movie items');
             return;
         }
         
         try {
             const result = await this.api.refreshItemPrice(item.id);
-            if (result.price !== item.price) {
-                item.price = result.price;
-                item.last_updated = new Date().toISOString();
+            
+            // Update the item with new data
+            this.categories[categoryIndex].items[itemIndex] = result;
+            
+            // Check if price was updated
+            if (result.priceRefresh && result.priceRefresh.updated) {
+                const oldPrice = result.priceRefresh.oldPrice;
+                const newPrice = result.priceRefresh.newPrice;
+                const source = result.priceRefresh.source;
                 this.render();
-                alert(`Price updated to £${result.price.toFixed(2)}`);
+                alert(`Price updated from £${oldPrice.toFixed(2)} to £${newPrice.toFixed(2)} (Source: ${source})`);
             } else {
                 alert('No price change detected');
             }
@@ -2337,34 +2352,55 @@ class PriceNest {
     
     async refreshAllPrices(categoryIndex) {
         const category = this.categories[categoryIndex];
-        const koboItems = category.items.filter(item => item.url.includes('kobo.com'));
         
-        if (koboItems.length === 0) {
-            alert('No Kobo items to refresh in this category');
+        // Check if category supports price refresh
+        const refreshableItems = category.items.filter(item => {
+            const isKoboItem = item.url.includes('kobo.com');
+            return isKoboItem || category.type === 'movies' || category.type === 'books';
+        });
+        
+        if (refreshableItems.length === 0) {
+            alert('No items that support price refresh in this category');
+            return;
+        }
+        
+        if (!confirm(`Refresh prices for ${refreshableItems.length} items? This may take a few minutes.`)) {
             return;
         }
         
         let updatedCount = 0;
+        let processedCount = 0;
         
         for (let i = 0; i < category.items.length; i++) {
-            if (category.items[i].url.includes('kobo.com')) {
+            const item = category.items[i];
+            const isKoboItem = item.url.includes('kobo.com');
+            const canRefresh = isKoboItem || category.type === 'movies' || category.type === 'books';
+            
+            if (canRefresh) {
                 try {
-                    const item = category.items[i];
+                    processedCount++;
+                    console.log(`Refreshing ${processedCount}/${refreshableItems.length}: ${item.name}`);
+                    
                     const result = await this.api.refreshItemPrice(item.id);
-                    if (result.price !== item.price) {
-                        item.price = result.price;
-                        item.last_updated = new Date().toISOString();
+                    
+                    // Update the item with new data
+                    this.categories[categoryIndex].items[i] = result;
+                    
+                    // Check if price was updated
+                    if (result.priceRefresh && result.priceRefresh.updated) {
                         updatedCount++;
                     }
+                    
+                    // Small delay to be respectful to APIs
                     await new Promise(resolve => setTimeout(resolve, 1000));
                 } catch (error) {
-                    console.error('Failed to refresh price for item:', category.items[i].name);
+                    console.error('Failed to refresh price for item:', item.name, error);
                 }
             }
         }
         
         this.render();
-        alert(`Price refresh complete. ${updatedCount} items updated.`);
+        alert(`Price refresh complete! Updated ${updatedCount} out of ${processedCount} items.`);
     }
     
     render() {
@@ -2512,6 +2548,8 @@ class PriceNest {
                         <button class="btn btn-success" onclick="app.openKoboModal(${categoryIndex})">
                             <i class="fas fa-book"></i> Add from Books
                         </button>
+                    ` : ''}
+                    ${(category.type === 'movies' || category.type === 'books') ? `
                         <button class="btn btn-secondary" onclick="app.refreshAllPrices(${categoryIndex})">
                             <i class="fas fa-sync"></i> Refresh Prices
                         </button>
@@ -2585,7 +2623,7 @@ class PriceNest {
         }
         
         const itemsHtml = category.items.map((item, itemIndex) => 
-            this.createItemElement(item, categoryIndex, itemIndex)
+            this.createItemElement(item, categoryIndex, itemIndex, category)
         ).join('');
         
         return `
@@ -2608,36 +2646,22 @@ class PriceNest {
         `;
     }
     
-    createItemElement(item, categoryIndex, itemIndex) {
-        const lastUpdated = item.lastUpdated ? new Date(item.lastUpdated).toLocaleDateString() : 'Never';
-        const priceHistory = item.priceHistory || [];
+    createItemElement(item, categoryIndex, itemIndex, category) {
         const isKoboItem = item.url.includes('kobo.com');
+        const canRefreshPrice = isKoboItem || category.type === 'movies' || category.type === 'books';
         
-        let priceChangeHtml = '';
-        if (priceHistory.length > 1) {
-            const previousPrice = priceHistory[priceHistory.length - 2].price;
-            const currentPrice = item.price;
-            const priceDiff = currentPrice - previousPrice;
-            
-            if (priceDiff !== 0) {
-                const changeClass = priceDiff > 0 ? 'price-increase' : 'price-decrease';
-                const changeIcon = priceDiff > 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-                priceChangeHtml = `
-                    <span class="price-change ${changeClass}">
-                        <i class="fas ${changeIcon}"></i> £${Math.abs(priceDiff).toFixed(2)}
-                    </span>
-                `;
-            }
-        }
+        // Show last updated time
+        const lastUpdated = item.lastUpdated ? 
+            new Date(item.lastUpdated).toLocaleDateString() : 
+            'Never updated';
         
-        const priceHistoryHtml = priceHistory.length > 1 ? `
-            <div class="price-history">
-                <strong>Price History:</strong>
-                ${priceHistory.slice(-3).map(entry => `
-                    £${entry.price.toFixed(2)} (${new Date(entry.date).toLocaleDateString()})
-                `).join(', ')}
-            </div>
-        ` : '';
+        // Price change indicators will be shown via hover tooltip
+        const priceChangeHtml = item.lastUpdated && item.lastUpdated !== item.createdAt ? 
+            `<span class="price-updated-indicator" title="Price recently updated">
+                <i class="fas fa-clock" style="color: #1976d2; font-size: 10px;"></i>
+            </span>` : '';
+        
+        const priceHistoryHtml = '';
         
         // Get artwork URL or placeholder
         const artworkUrl = item.artworkUrl || item.imageUrl || null;
@@ -2701,7 +2725,7 @@ class PriceNest {
                         <i class="fas fa-edit"></i>
                         <span class="btn-text">Edit</span>
                     </button>
-                    ${isKoboItem ? `
+                    ${canRefreshPrice ? `
                         <button class="btn btn-secondary btn-small refresh-price-btn" 
                                 onclick="app.refreshItemPrice(${categoryIndex}, ${itemIndex})"
                                 title="Refresh price">
@@ -2709,6 +2733,12 @@ class PriceNest {
                             <span class="btn-text">Refresh</span>
                         </button>
                     ` : ''}
+                    <button class="btn btn-info btn-small" 
+                            onclick="app.showPriceHistoryModal(${item.id})"
+                            title="View price history">
+                        <i class="fas fa-chart-line"></i>
+                        <span class="btn-text">History</span>
+                    </button>
                     <button class="btn btn-danger btn-small" 
                             onclick="app.deleteItem(${categoryIndex}, ${itemIndex})"
                             title="Delete item">
@@ -2725,6 +2755,286 @@ class PriceNest {
         if (item.title && item.author) return 'fa-book'; // Book
         if (item.url && item.url.includes('kobo.com')) return 'fa-book'; // Kobo book
         return 'fa-shopping-cart'; // Generic item
+    }
+
+    async showPriceHistoryModal(itemId) {
+        try {
+            // Fetch price history
+            const historyData = await this.api.getItemPriceHistory(itemId);
+            const history = historyData.priceHistory || [];
+            
+            if (history.length === 0) {
+                this.showError('No price history available for this item.');
+                return;
+            }
+            
+            // Create modal
+            const modal = document.createElement('div');
+            modal.className = 'modal price-history-modal';
+            modal.style.display = 'block';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h2><i class="fas fa-chart-line"></i> Price History</h2>
+                        <span class="close" onclick="this.closest('.modal').remove()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        ${this.createPriceHistoryContent(history, historyData.itemName)}
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            document.body.appendChild(modal);
+            
+        } catch (error) {
+            console.error('Failed to load price history:', error);
+            this.showError('Failed to load price history.');
+        }
+    }
+    
+    createPriceHistoryContent(history, itemName) {
+        // Show all price changes in reverse chronological order (newest first)
+        const reversedHistory = [...history].reverse();
+        
+        let html = `
+            <div class="price-history-header">
+                <h3>${itemName}</h3>
+                <p>Total price changes: ${history.length}</p>
+            </div>
+            
+            <!-- Price History Graph -->
+            <div class="price-history-graph">
+                ${this.createPriceLineChart(history)}
+            </div>
+            
+            <!-- Price History Table -->
+            <div class="price-history-table">
+                <div class="price-history-row header">
+                    <div class="col-date">Date</div>
+                    <div class="col-change">Price Change</div>
+                    <div class="col-difference">Difference</div>
+                    <div class="col-source">Source</div>
+                </div>
+        `;
+        
+        reversedHistory.forEach((entry, index) => {
+            const date = new Date(entry.date).toLocaleDateString();
+            const priceChange = entry.newPrice - entry.oldPrice;
+            const changeText = priceChange > 0 ? `+£${Math.abs(priceChange).toFixed(2)}` : `-£${Math.abs(priceChange).toFixed(2)}`;
+            const changeColor = priceChange > 0 ? '#d32f2f' : '#388e3c';
+            const changeIcon = priceChange > 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+            
+            html += `
+                <div class="price-history-row">
+                    <div class="col-date">${date}</div>
+                    <div class="col-change">
+                        £${entry.oldPrice.toFixed(2)} → £${entry.newPrice.toFixed(2)}
+                    </div>
+                    <div class="col-difference" style="color: ${changeColor};">
+                        <i class="fas ${changeIcon}"></i> ${changeText}
+                    </div>
+                    <div class="col-source">${entry.priceSource || 'Unknown'}</div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        // Add some inline styles for the table
+        html += `
+            <style>
+                .price-history-header { margin-bottom: 20px; text-align: center; }
+                .price-history-header h3 { margin: 0 0 8px 0; color: #333; }
+                .price-history-header p { margin: 0; color: #666; font-size: 14px; }
+                .price-history-table { width: 100%; }
+                .price-history-row { 
+                    display: grid; 
+                    grid-template-columns: 1fr 2fr 1fr 1fr; 
+                    gap: 12px; 
+                    padding: 12px 8px; 
+                    border-bottom: 1px solid #eee; 
+                    align-items: center;
+                }
+                .price-history-row.header { 
+                    background: #f5f5f5; 
+                    font-weight: bold; 
+                    border-bottom: 2px solid #ddd; 
+                }
+                .price-history-row:hover:not(.header) { background: #f9f9f9; }
+                .col-date { font-size: 14px; }
+                .col-change { font-family: monospace; font-size: 14px; }
+                .col-difference { font-weight: bold; font-size: 14px; }
+                .col-source { font-size: 12px; color: #666; text-transform: capitalize; }
+            </style>
+        `;
+        
+        return html;
+    }
+
+    createPriceLineChart(history) {
+        if (history.length === 0) return '<p>No price data to display</p>';
+        
+        // Create data points for the chart showing the complete price progression
+        const dataPoints = [];
+        
+        // Add the first old price as starting point
+        const firstEntry = history[0];
+        dataPoints.push({
+            date: new Date(firstEntry.date).getTime() - 86400000, // 1 day before first change
+            price: firstEntry.oldPrice,
+            label: `Initial: £${firstEntry.oldPrice.toFixed(2)}`,
+            type: 'initial'
+        });
+        
+        // For each history entry, add both the old price (if different from previous) and new price
+        history.forEach((entry, index) => {
+            const entryDate = new Date(entry.date).getTime();
+            
+            // If this old price is different from the previous new price, add it as an intermediate point
+            if (index > 0 && entry.oldPrice !== history[index - 1].newPrice) {
+                dataPoints.push({
+                    date: entryDate - 30000, // 30 seconds before the change
+                    price: entry.oldPrice,
+                    label: `£${entry.oldPrice.toFixed(2)} (before change on ${new Date(entry.date).toLocaleDateString()})`,
+                    type: 'intermediate'
+                });
+            }
+            
+            // Add the new price point
+            dataPoints.push({
+                date: entryDate,
+                price: entry.newPrice,
+                label: `£${entry.newPrice.toFixed(2)} (${new Date(entry.date).toLocaleDateString()} ${new Date(entry.date).toLocaleTimeString()})`,
+                type: 'change'
+            });
+        });
+        
+        // Chart dimensions
+        const width = 500;
+        const height = 200;
+        const margin = { top: 20, right: 20, bottom: 40, left: 60 };
+        const chartWidth = width - margin.left - margin.right;
+        const chartHeight = height - margin.top - margin.bottom;
+        
+        // Calculate scales
+        const minDate = Math.min(...dataPoints.map(d => d.date));
+        const maxDate = Math.max(...dataPoints.map(d => d.date));
+        const minPrice = Math.min(...dataPoints.map(d => d.price)) * 0.95; // Add 5% padding
+        const maxPrice = Math.max(...dataPoints.map(d => d.price)) * 1.05; // Add 5% padding
+        
+        const xScale = (date) => ((date - minDate) / (maxDate - minDate)) * chartWidth;
+        const yScale = (price) => chartHeight - ((price - minPrice) / (maxPrice - minPrice)) * chartHeight;
+        
+        // Create SVG path for the line
+        let pathData = '';
+        dataPoints.forEach((point, index) => {
+            const x = xScale(point.date);
+            const y = yScale(point.price);
+            pathData += index === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+        });
+        
+        // Create grid lines
+        const gridLines = [];
+        const priceStep = (maxPrice - minPrice) / 4;
+        for (let i = 0; i <= 4; i++) {
+            const price = minPrice + (priceStep * i);
+            const y = yScale(price);
+            gridLines.push(`<line x1="0" y1="${y}" x2="${chartWidth}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`);
+            gridLines.push(`<text x="-10" y="${y + 4}" fill="#666" font-size="12" text-anchor="end">£${price.toFixed(2)}</text>`);
+        }
+        
+        // Create data point circles with different colors based on type
+        const circles = dataPoints.map((point, index) => {
+            const x = xScale(point.date);
+            const y = yScale(point.price);
+            
+            let color;
+            let radius = 4;
+            switch (point.type) {
+                case 'initial':
+                    color = '#666';
+                    radius = 5;
+                    break;
+                case 'intermediate':
+                    color = '#ff9800';
+                    radius = 3;
+                    break;
+                case 'change':
+                    color = index === dataPoints.length - 1 ? '#1976d2' : '#4caf50';
+                    radius = 4;
+                    break;
+                default:
+                    color = '#2196f3';
+            }
+            
+            return `
+                <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" stroke="white" stroke-width="2">
+                    <title>${point.label}</title>
+                </circle>
+            `;
+        }).join('');
+        
+        // Create x-axis labels (dates)
+        const dateLabels = dataPoints.map((point, index) => {
+            if (index === 0 || index === dataPoints.length - 1 || dataPoints.length <= 3) {
+                const x = xScale(point.date);
+                const dateStr = new Date(point.date).toLocaleDateString('en-GB', { 
+                    month: 'short', 
+                    day: 'numeric'
+                });
+                return `<text x="${x}" y="${chartHeight + 15}" fill="#666" font-size="10" text-anchor="middle">${dateStr}</text>`;
+            }
+            return '';
+        }).join('');
+        
+        return `
+            <div class="chart-container" style="text-align: center; margin: 20px 0;">
+                <h4 style="margin: 0 0 15px 0; color: #333;">Price Trend</h4>
+                <svg width="${width}" height="${height}" style="border: 1px solid #e0e0e0; background: #fafafa;">
+                    <g transform="translate(${margin.left}, ${margin.top})">
+                        <!-- Grid lines and Y-axis labels -->
+                        ${gridLines.join('')}
+                        
+                        <!-- Price line -->
+                        <path d="${pathData}" fill="none" stroke="#1976d2" stroke-width="3" stroke-linecap="round"/>
+                        
+                        <!-- Data points -->
+                        ${circles}
+                        
+                        <!-- X-axis -->
+                        <line x1="0" y1="${chartHeight}" x2="${chartWidth}" y2="${chartHeight}" stroke="#333" stroke-width="1"/>
+                        
+                        <!-- X-axis labels -->
+                        ${dateLabels}
+                        
+                        <!-- Y-axis -->
+                        <line x1="0" y1="0" x2="0" y2="${chartHeight}" stroke="#333" stroke-width="1"/>
+                    </g>
+                </svg>
+                <div style="margin: 15px 0 0 0; display: flex; justify-content: center; gap: 20px; font-size: 12px; color: #666;">
+                    <div><span style="color: #666;">●</span> Initial Price</div>
+                    <div><span style="color: #ff9800;">●</span> Manual Changes</div>
+                    <div><span style="color: #4caf50;">●</span> API Updates</div>
+                    <div><span style="color: #1976d2;">●</span> Current Price</div>
+                </div>
+                <p style="margin: 5px 0 0 0; color: #666; font-size: 12px; text-align: center;">
+                    ${dataPoints.length > 1 ? 
+                        `Complete price journey from £${dataPoints[0].price.toFixed(2)} to £${dataPoints[dataPoints.length-1].price.toFixed(2)}` :
+                        'Single price point'
+                    }
+                </p>
+            </div>
+        `;
     }
 }
 

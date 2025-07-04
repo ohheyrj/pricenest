@@ -23,7 +23,7 @@ def get_categories():
             category_id = category['id']
             
             cursor.execute('''
-                SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at 
+                SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
                 FROM items 
                 WHERE category_id = ? 
                 ORDER BY created_at DESC
@@ -42,7 +42,9 @@ def get_categories():
                     'url': item_row[7],
                     'price': item_row[8],
                     'bought': bool(item_row[9]),
-                    'createdAt': item_row[10] if len(item_row) > 10 else None
+                    'createdAt': item_row[10] if len(item_row) > 10 else None,
+                    'externalId': item_row[11] if len(item_row) > 11 else None,
+                    'lastUpdated': item_row[12] if len(item_row) > 12 else None
                 }
                 items.append(item)
             
