@@ -9,6 +9,9 @@
     setuptools
     flask
     flask-cors
+    flask-sqlalchemy
+    sqlalchemy
+    alembic
     python-dotenv
     requests
     pytest
