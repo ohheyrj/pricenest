@@ -140,7 +140,8 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
                 'url': apple_url,
                 'priceSource': price_info['source'],
                 'artwork': item.get('artworkUrl100', ''),
-                'description': item.get('longDescription', item.get('shortDescription', ''))
+                'description': item.get('longDescription', item.get('shortDescription', '')),
+                'trackId': item.get('trackId')  # Store iTunes track ID for accurate price refresh
             }
             movies.append(movie)
         
@@ -157,7 +158,16 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
             else:
                 return 4  # Estimated/unknown
         
+        # Sort movies: standalone first, then by price source quality, then by price
+        def is_collection_movie(movie):
+            # Prefer standalone movies over collection/bundle movies
+            url = movie.get('url', '').lower()
+            description = movie.get('description', '').lower()
+            return ('collection' in url or 'bundle' in url or 
+                   'collection' in description or 'bundle' in description)
+        
         movies.sort(key=lambda movie: (
+            is_collection_movie(movie),  # False (standalone) comes before True (collection)
             get_price_priority(movie['priceSource']),
             movie['price'] if movie['price'] else 999
         ))
@@ -183,6 +193,88 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
             'movies': [],
             'error': f'Search failed: {str(e)}',
             'debug': debug_info
+        }
+
+
+def get_movie_by_track_id(track_id: str) -> Dict[str, Any]:
+    """Get a specific movie by its iTunes track ID for accurate price refresh."""
+    try:
+        # Use iTunes lookup API for exact track ID
+        url = "https://itunes.apple.com/lookup"
+        params = {
+            'id': track_id,
+            'country': 'GB',
+            'entity': 'movie'
+        }
+        
+        print(f"🔍 DEBUG: Looking up movie by track ID: {track_id}")
+        
+        response = requests.get(url, params=params, timeout=10)
+        
+        if not response.ok:
+            return {
+                'movie': None,
+                'error': f'iTunes lookup failed with status {response.status_code}'
+            }
+        
+        data = response.json()
+        results = data.get('results', [])
+        
+        if not results:
+            return {
+                'movie': None,
+                'error': f'No movie found with track ID {track_id}'
+            }
+        
+        item = results[0]
+        title = item.get('trackName')
+        
+        if not title:
+            return {
+                'movie': None,
+                'error': 'Invalid movie data returned'
+            }
+        
+        # Extract movie details (same as search_apple_movies)
+        director = item.get('artistName', 'Unknown Director')
+        year = extract_year_from_release_date(item.get('releaseDate', ''))
+        genre = item.get('primaryGenreName', 'Unknown')
+        
+        # Get pricing information
+        price_info = get_apple_pricing(item)
+        
+        # Create Apple Store URL
+        apple_url = item.get('trackViewUrl', f"https://tv.apple.com/search?term={requests.utils.quote(title)}")
+        
+        # Create display name
+        display_name = f"{title} ({year})" if year else title
+        
+        movie = {
+            'title': title,
+            'director': director,
+            'year': year,
+            'genre': genre,
+            'name': display_name,
+            'price': price_info['price'],
+            'url': apple_url,
+            'priceSource': price_info['source'],
+            'artwork': item.get('artworkUrl100', ''),
+            'description': item.get('longDescription', item.get('shortDescription', '')),
+            'trackId': item.get('trackId')
+        }
+        
+        print(f"✅ DEBUG: Found movie: {title} - £{price_info['price']} ({price_info['source']})")
+        
+        return {
+            'movie': movie,
+            'error': None
+        }
+        
+    except Exception as e:
+        print(f"💥 DEBUG: Track ID lookup error: {e}")
+        return {
+            'movie': None,
+            'error': f'Failed to lookup movie: {str(e)}'
         }
 
 

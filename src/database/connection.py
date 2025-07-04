@@ -73,6 +73,21 @@ def init_database():
         )
     ''')
     
+    # Create price history table (drop and recreate if structure is wrong)
+    cursor.execute("DROP TABLE IF EXISTS price_history")
+    cursor.execute('''
+        CREATE TABLE price_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_id INTEGER NOT NULL,
+            old_price REAL NOT NULL,
+            new_price REAL NOT NULL,
+            price_source TEXT,
+            search_query TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE
+        )
+    ''')
+    
     # Add new columns if they don't exist (for existing databases)
     cursor.execute("PRAGMA table_info(items)")
     columns = [column[1] for column in cursor.fetchall()]
@@ -84,6 +99,14 @@ def init_database():
     if 'year' not in columns:
         print("📅 Adding 'year' column to items table...")
         cursor.execute('ALTER TABLE items ADD COLUMN year INTEGER')
+    
+    if 'external_id' not in columns:
+        print("🔗 Adding 'external_id' column to items table...")
+        cursor.execute('ALTER TABLE items ADD COLUMN external_id TEXT')
+    
+    if 'last_updated' not in columns:
+        print("🕐 Adding 'last_updated' column to items table...")
+        cursor.execute('ALTER TABLE items ADD COLUMN last_updated TIMESTAMP')
     
     conn.commit()
     conn.close()

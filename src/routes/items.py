@@ -24,6 +24,7 @@ def create_item(category_id):
         author = data.get('author')
         director = data.get('director')
         year = data.get('year')
+        external_id = data.get('trackId') or data.get('external_id')  # Support both trackId and external_id
         
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -45,13 +46,13 @@ def create_item(category_id):
                 author = name[by_index + 4:]
         
         cursor.execute('''
-            INSERT INTO items (category_id, name, title, author, director, year, url, price, bought)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-        ''', (category_id, name, title, author, director, year, url, price))
+            INSERT INTO items (category_id, name, title, author, director, year, url, price, bought, external_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        ''', (category_id, name, title, author, director, year, url, price, external_id))
         
         item_id = cursor.lastrowid
         cursor.execute('''
-            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at 
+            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
             FROM items WHERE id = ?
         ''', (item_id,))
         row = cursor.fetchone()
@@ -71,7 +72,9 @@ def create_item(category_id):
                 'url': row[7],
                 'price': row[8],
                 'bought': bool(row[9]),
-                'createdAt': row[10] if len(row) > 10 else None
+                'createdAt': row[10] if len(row) > 10 else None,
+                'externalId': row[11] if len(row) > 11 else None,
+                'lastUpdated': row[12] if len(row) > 12 else None
             }
             return jsonify(item), 201
         else:
@@ -100,22 +103,23 @@ def update_item(item_id):
         author = data.get('author')
         director = data.get('director')
         year = data.get('year')
+        external_id = data.get('trackId') or data.get('external_id')  # Support both trackId and external_id
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute('''
             UPDATE items 
-            SET name = ?, title = ?, author = ?, director = ?, year = ?, url = ?, price = ?
+            SET name = ?, title = ?, author = ?, director = ?, year = ?, url = ?, price = ?, external_id = ?
             WHERE id = ?
-        ''', (name, title, author, director, year, url, price, item_id))
+        ''', (name, title, author, director, year, url, price, external_id, item_id))
         
         if cursor.rowcount == 0:
             conn.close()
             return jsonify({'error': 'Item not found'}), 404
         
         cursor.execute('''
-            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at 
+            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
             FROM items WHERE id = ?
         ''', (item_id,))
         row = cursor.fetchone()
@@ -135,7 +139,9 @@ def update_item(item_id):
                 'url': row[7],
                 'price': row[8],
                 'bought': bool(row[9]),
-                'createdAt': row[10] if len(row) > 10 else None
+                'createdAt': row[10] if len(row) > 10 else None,
+                'externalId': row[11] if len(row) > 11 else None,
+                'lastUpdated': row[12] if len(row) > 12 else None
             }
             return jsonify(item)
         else:
@@ -191,7 +197,7 @@ def toggle_item_bought(item_id):
         cursor.execute('UPDATE items SET bought = ? WHERE id = ?', (int(new_bought), item_id))
         
         cursor.execute('''
-            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at 
+            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
             FROM items WHERE id = ?
         ''', (item_id,))
         row = cursor.fetchone()
@@ -211,7 +217,9 @@ def toggle_item_bought(item_id):
                 'url': row[7],
                 'price': row[8],
                 'bought': bool(row[9]),
-                'createdAt': row[10] if len(row) > 10 else None
+                'createdAt': row[10] if len(row) > 10 else None,
+                'externalId': row[11] if len(row) > 11 else None,
+                'lastUpdated': row[12] if len(row) > 12 else None
             }
             return jsonify(item)
         else:
@@ -231,7 +239,7 @@ def refresh_item_price(item_id):
         
         # Get the item and its category information
         cursor.execute('''
-            SELECT i.id, i.category_id, i.name, i.title, i.author, i.director, i.year, i.url, i.price, i.bought, i.created_at,
+            SELECT i.id, i.category_id, i.name, i.title, i.author, i.director, i.year, i.url, i.price, i.bought, i.created_at, i.external_id,
                    c.type as category_type
             FROM items i
             JOIN categories c ON i.category_id = c.id
@@ -255,7 +263,8 @@ def refresh_item_price(item_id):
             'price': row[8],
             'bought': bool(row[9]),
             'createdAt': row[10],
-            'categoryType': row[11]
+            'externalId': row[11],
+            'categoryType': row[12]
         }
         
         # Determine what to search for based on the item's data and category type
@@ -265,22 +274,40 @@ def refresh_item_price(item_id):
         
         if item_data['categoryType'] == 'movies':
             # Import the movie search service
-            from src.services.movie_search import search_apple_movies
+            from src.services.movie_search import search_apple_movies, get_movie_by_track_id
             
-            # Use title if available, otherwise use name
-            search_query = item_data['title'] or item_data['name']
-            
-            if search_query:
-                search_results = search_apple_movies(search_query)
-                if search_results.get('movies') and len(search_results['movies']) > 0:
-                    # Find the best match (first result is usually best)
-                    best_match = search_results['movies'][0]
+            # If we have a stored track ID, use it for exact lookup
+            if item_data['externalId']:
+                print(f"🎬 Using stored track ID: {item_data['externalId']}")
+                lookup_result = get_movie_by_track_id(item_data['externalId'])
+                if lookup_result.get('movie'):
+                    best_match = lookup_result['movie']
                     new_price = best_match.get('price', item_data['price'])
-                    price_source = 'apple'
+                    price_source = best_match.get('priceSource', 'apple')
+                    search_query = f"Track ID: {item_data['externalId']}"
+                else:
+                    print(f"⚠️ Track ID lookup failed: {lookup_result.get('error')}")
+                    # Fallback to search by title
+                    search_query = item_data['title'] or item_data['name']
+                    if search_query:
+                        search_results = search_apple_movies(search_query)
+                        if search_results.get('movies') and len(search_results['movies']) > 0:
+                            best_match = search_results['movies'][0]
+                            new_price = best_match.get('price', item_data['price'])
+                            price_source = best_match.get('priceSource', 'apple')
+            else:
+                # No track ID stored, search by title
+                search_query = item_data['title'] or item_data['name']
+                if search_query:
+                    search_results = search_apple_movies(search_query)
+                    if search_results.get('movies') and len(search_results['movies']) > 0:
+                        best_match = search_results['movies'][0]
+                        new_price = best_match.get('price', item_data['price'])
+                        price_source = best_match.get('priceSource', 'apple')
         
         elif item_data['categoryType'] == 'books':
             # Import the book search service
-            from src.services.book_search import search_google_books, search_kobo_books
+            from src.services.book_search import search_google_books
             
             # Use title and author if available
             if item_data['title'] and item_data['author']:
@@ -289,33 +316,33 @@ def refresh_item_price(item_id):
                 search_query = item_data['name']
             
             if search_query:
-                # Try Google Books first
+                # Search using Google Books API
                 google_results = search_google_books(search_query)
                 if google_results.get('books') and len(google_results['books']) > 0:
                     best_match = google_results['books'][0]
                     new_price = best_match.get('price', item_data['price'])
-                    price_source = 'google_books'
-                else:
-                    # Fallback to Kobo
-                    kobo_results = search_kobo_books(search_query)
-                    if kobo_results.get('books') and len(kobo_results['books']) > 0:
-                        best_match = kobo_results['books'][0]
-                        new_price = best_match.get('price', item_data['price'])
-                        price_source = 'kobo'
+                    price_source = best_match.get('priceSource', 'google_books')
         
         # If no new price was found, keep the original price
         if new_price is None:
             new_price = item_data['price']
             price_source = 'no_update'
         
-        # Update the item with the new price
+        # Save price change to history if price actually changed
+        if new_price != item_data['price']:
+            cursor.execute('''
+                INSERT INTO price_history (item_id, old_price, new_price, price_source, search_query)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (item_id, item_data['price'], new_price, price_source, search_query))
+        
+        # Update the item with the new price and timestamp
         cursor.execute('''
-            UPDATE items SET price = ? WHERE id = ?
+            UPDATE items SET price = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?
         ''', (new_price, item_id))
         
         # Get the updated item
         cursor.execute('''
-            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at 
+            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
             FROM items WHERE id = ?
         ''', (item_id,))
         updated_row = cursor.fetchone()
@@ -336,6 +363,8 @@ def refresh_item_price(item_id):
                 'price': updated_row[8],
                 'bought': bool(updated_row[9]),
                 'createdAt': updated_row[10],
+                'externalId': updated_row[11],
+                'lastUpdated': updated_row[12],
                 'priceRefresh': {
                     'oldPrice': item_data['price'],
                     'newPrice': updated_row[8],
@@ -351,3 +380,50 @@ def refresh_item_price(item_id):
     except Exception as e:
         print(f"Error refreshing item price: {e}")
         return jsonify({'error': 'Failed to refresh item price'}), 500
+
+
+@items_bp.route('/api/items/<int:item_id>/price-history', methods=['GET'])
+def get_item_price_history(item_id):
+    """Get price history for an item."""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify item exists
+        cursor.execute('SELECT id, name FROM items WHERE id = ?', (item_id,))
+        item = cursor.fetchone()
+        
+        if not item:
+            conn.close()
+            return jsonify({'error': 'Item not found'}), 404
+        
+        # Get price history
+        cursor.execute('''
+            SELECT old_price, new_price, price_source, search_query, created_at
+            FROM price_history 
+            WHERE item_id = ?
+            ORDER BY created_at ASC
+        ''', (item_id,))
+        
+        history_rows = cursor.fetchall()
+        conn.close()
+        
+        history = []
+        for row in history_rows:
+            history.append({
+                'oldPrice': row[0],
+                'newPrice': row[1],
+                'priceSource': row[2],
+                'searchQuery': row[3],
+                'date': row[4]
+            })
+        
+        return jsonify({
+            'itemId': item_id,
+            'itemName': item[1],
+            'priceHistory': history
+        })
+        
+    except Exception as e:
+        print(f"Error fetching price history: {e}")
+        return jsonify({'error': 'Failed to fetch price history'}), 500
