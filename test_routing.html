@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Routing Test</title>
+</head>
+<body>
+    <h1>URL Routing Test</h1>
+    <div id="output"></div>
+    
+    <script>
+        // Mock the key routing functions from our implementation
+        class MockApp {
+            constructor() {
+                this.categories = [
+                    {name: 'Books', type: 'books', items: [{name: 'Book A', price: 10}, {name: 'Book B', price: 5}]},
+                    {name: 'Movies', type: 'movies', items: [{name: 'Movie A', price: 15}, {name: 'Movie B', price: 8}]},
+                    {name: 'Electronics', type: 'general', items: [{name: 'Phone', price: 500}, {name: 'Laptop', price: 1000}]}
+                ];
+                this.currentCategoryIndex = null;
+                this.currentViewMode = 'grid';
+                this.initializeRouting();
+            }
+
+            initializeRouting() {
+                window.addEventListener('hashchange', () => this.handleRoute());
+                this.handleRoute(); // Handle initial route
+            }
+
+            handleRoute() {
+                const hash = window.location.hash;
+                const output = document.getElementById('output');
+                
+                if (!hash || hash === '#') {
+                    this.currentCategoryIndex = null;
+                    output.innerHTML = '<h2>Main Categories View</h2><p>Current URL: ' + window.location.href + '</p>';
+                    return;
+                }
+
+                if (hash.startsWith('#/category/')) {
+                    const categoryName = decodeURIComponent(hash.replace('#/category/', ''));
+                    const categoryIndex = this.categories.findIndex(cat => cat.name === categoryName);
+                    
+                    if (categoryIndex !== -1) {
+                        this.openCategoryView(categoryIndex, false);
+                    } else {
+                        output.innerHTML = '<h2>Category Not Found</h2><p>Redirecting to main view...</p>';
+                        this.navigateTo('');
+                    }
+                } else {
+                    output.innerHTML = '<h2>Unknown Route</h2><p>Redirecting to main view...</p>';
+                    this.navigateTo('');
+                }
+            }
+
+            navigateTo(route) {
+                if (route === '' || route === '/') {
+                    window.location.hash = '';
+                } else {
+                    window.location.hash = '#' + route;
+                }
+            }
+
+            openCategory(categoryName) {
+                this.navigateTo(`/category/${encodeURIComponent(categoryName)}`);
+            }
+
+            openCategoryView(categoryIndex, updateUrl = true) {
+                // Reset view mode only if switching to a different category
+                if (this.currentCategoryIndex !== categoryIndex) {
+                    this.currentViewMode = 'grid';
+                }
+                
+                this.currentCategoryIndex = categoryIndex;
+                const category = this.categories[categoryIndex];
+                
+                if (updateUrl) {
+                    this.navigateTo(`/category/${encodeURIComponent(category.name)}`);
+                }
+                
+                const output = document.getElementById('output');
+                output.innerHTML = `
+                    <h2>Category View: ${category.name}</h2>
+                    <p>Current URL: ${window.location.href}</p>
+                    <p>Category Index: ${categoryIndex}</p>
+                    <p>Current View Mode: <strong>${this.currentViewMode}</strong></p>
+                    <div>
+                        <button onclick="app.toggleItemView('grid')">Grid View</button>
+                        <button onclick="app.toggleItemView('list')">List View</button>
+                        <button onclick="app.sortItems(${categoryIndex}, 'name')">Sort by Name (Test)</button>
+                    </div>
+                    <div>Items: ${category.items.map(item => `${item.name} ($${item.price})`).join(', ')}</div>
+                `;
+            }
+
+            toggleItemView(view) {
+                this.currentViewMode = view;
+                // Re-render to show updated view mode
+                if (this.currentCategoryIndex !== null) {
+                    this.openCategoryView(this.currentCategoryIndex, false);
+                }
+            }
+
+            sortItems(categoryIndex, sortBy) {
+                const items = this.categories[categoryIndex].items;
+                
+                switch (sortBy) {
+                    case 'name':
+                        items.sort((a, b) => a.name.localeCompare(b.name));
+                        break;
+                    case 'price-low':
+                        items.sort((a, b) => a.price - b.price);
+                        break;
+                    case 'price-high':
+                        items.sort((a, b) => b.price - a.price);
+                        break;
+                }
+                
+                // Re-render (this should preserve view mode now)
+                if (this.currentCategoryIndex !== null) {
+                    this.openCategoryView(this.currentCategoryIndex, false);
+                }
+            }
+        }
+
+        // Create the app instance
+        const app = new MockApp();
+
+        // Test navigation
+        window.testNavigation = function() {
+            console.log('Testing navigation...');
+            
+            // Test main view
+            app.navigateTo('');
+            
+            setTimeout(() => {
+                // Test category view
+                app.openCategory('Books');
+                
+                setTimeout(() => {
+                    // Test refresh (should maintain category view)
+                    console.log('Current hash before refresh test:', window.location.hash);
+                    app.handleRoute(); // Simulate refresh
+                }, 1000);
+            }, 1000);
+        };
+
+        // Add test buttons
+        document.body.innerHTML += `
+            <div style="margin-top: 20px;">
+                <button onclick="app.navigateTo('')">Go to Main</button>
+                <button onclick="app.openCategory('Books')">Go to Books</button>
+                <button onclick="app.openCategory('Movies')">Go to Movies</button>
+                <button onclick="app.openCategory('Electronics')">Go to Electronics</button>
+                <button onclick="testNavigation()">Test Auto Navigation</button>
+            </div>
+        `;
+    </script>
+</body>
+</html>

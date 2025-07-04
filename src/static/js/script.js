@@ -176,11 +176,13 @@ class PriceNest {
         this.currentItemIndex = null;
         this.editingCategory = false;
         this.editingItem = false;
+        this.currentViewMode = 'grid'; // Track current view mode (grid/list)
         this.api = new APIClient();
         this.settings = this.loadSettings();
         
         this.initializeElements();
         this.bindEvents();
+        this.initializeRouting();
         this.initialize();
     }
 
@@ -198,10 +200,51 @@ class PriceNest {
     async loadData() {
         try {
             this.categories = await this.api.getCategories();
-            this.render();
+            this.handleRoute(); // Handle initial route after data loads
         } catch (error) {
             console.error('Failed to load data:', error);
             this.showError('Failed to load data from database');
+        }
+    }
+
+    initializeRouting() {
+        // Listen for hash changes
+        window.addEventListener('hashchange', () => this.handleRoute());
+    }
+
+    handleRoute() {
+        const hash = window.location.hash;
+        
+        if (!hash || hash === '#') {
+            // No hash or empty hash - show main categories view
+            this.currentCategoryIndex = null;
+            this.currentViewMode = 'grid'; // Reset view mode when going to main view
+            this.renderMainView();
+            return;
+        }
+
+        // Parse hash routes
+        if (hash.startsWith('#/category/')) {
+            const categoryName = decodeURIComponent(hash.replace('#/category/', ''));
+            const categoryIndex = this.categories.findIndex(cat => cat.name === categoryName);
+            
+            if (categoryIndex !== -1) {
+                this.openCategoryView(categoryIndex, false); // false = don't update URL
+            } else {
+                // Category not found, go back to main view
+                this.navigateTo('');
+            }
+        } else {
+            // Unknown route, go to main view
+            this.navigateTo('');
+        }
+    }
+
+    navigateTo(route) {
+        if (route === '' || route === '/') {
+            window.location.hash = '';
+        } else {
+            window.location.hash = '#' + route;
         }
     }
 
@@ -2404,6 +2447,16 @@ class PriceNest {
     }
     
     render() {
+        // If we're currently viewing a specific category, re-render that view
+        if (this.currentCategoryIndex !== null && this.categories[this.currentCategoryIndex]) {
+            this.openCategoryView(this.currentCategoryIndex, false);
+            return;
+        }
+        
+        this.renderMainView();
+    }
+
+    renderMainView() {
         this.categoriesContainer.innerHTML = '';
         
         if (this.categories.length === 0) {
@@ -2513,10 +2566,20 @@ class PriceNest {
         return categoryDiv;
     }
     
-    openCategoryView(categoryIndex) {
+    openCategoryView(categoryIndex, updateUrl = true) {
+        // Reset view mode only if switching to a different category
+        if (this.currentCategoryIndex !== categoryIndex) {
+            this.currentViewMode = 'grid';
+        }
+        
         // Store the current category for detailed view
         this.currentCategoryIndex = categoryIndex;
         const category = this.categories[categoryIndex];
+        
+        // Update URL if requested
+        if (updateUrl) {
+            this.navigateTo(`/category/${encodeURIComponent(category.name)}`);
+        }
         
         // Update the main container to show detailed category view
         const container = document.getElementById('categories-container');
@@ -2531,10 +2594,10 @@ class PriceNest {
                         <span class="category-type-badge">${category.type.charAt(0).toUpperCase() + category.type.slice(1)}</span>
                     </div>
                     <div class="view-toggle">
-                        <button class="btn btn-small view-toggle-btn active" data-view="grid" onclick="app.toggleItemView('grid')">
+                        <button class="btn btn-small view-toggle-btn ${this.currentViewMode === 'grid' ? 'active' : ''}" data-view="grid" onclick="app.toggleItemView('grid')">
                             <i class="fas fa-th"></i> Grid
                         </button>
-                        <button class="btn btn-small view-toggle-btn" data-view="list" onclick="app.toggleItemView('list')">
+                        <button class="btn btn-small view-toggle-btn ${this.currentViewMode === 'list' ? 'active' : ''}" data-view="list" onclick="app.toggleItemView('list')">
                             <i class="fas fa-list"></i> List
                         </button>
                     </div>
@@ -2573,7 +2636,7 @@ class PriceNest {
                     </button>
                 </div>
                 
-                <div class="category-items grid-view" id="category-items-container">
+                <div class="category-items ${this.currentViewMode}-view" id="category-items-container">
                     ${category.items.length > 0 ? this.createItemsSection(category, categoryIndex) : '<div class="empty-state"><p>No items yet. Click "Add Item" to get started!</p></div>'}
                 </div>
             </div>
@@ -2581,11 +2644,12 @@ class PriceNest {
     }
     
     backToCategories() {
-        // Return to the main categories grid view
-        this.render();
+        // Update URL to go back to main view
+        this.navigateTo('');
     }
     
     toggleItemView(view) {
+        this.currentViewMode = view; // Store the current view mode
         const container = document.getElementById('category-items-container');
         const toggleBtns = document.querySelectorAll('.view-toggle-btn');
         
