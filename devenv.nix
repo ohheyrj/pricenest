@@ -4,7 +4,12 @@
     package = pkgs.python311;
   };
   
-  packages = with pkgs.python311Packages; [
+  # System packages for UI testing
+  packages = with pkgs; [
+    chromium
+    chromedriver
+    nodejs  # For JavaScript unit tests
+  ] ++ (with pkgs.python311Packages; [
     pip
     setuptools
     flask
@@ -18,5 +23,6 @@
     pytest-cov
     black
     flake8
-  ];
+    selenium
+  ]);
 }
