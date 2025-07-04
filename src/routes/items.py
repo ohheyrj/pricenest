@@ -12,14 +12,14 @@ items_bp = Blueprint('items', __name__)
 @items_bp.route('/api/categories/<int:category_id>/items', methods=['POST'])
 def create_item(category_id):
     """Create a new item in a category."""
+    # Check if category exists first (outside try block to allow 404 to bubble up)
+    category = Category.query.get_or_404(category_id)
+    
     try:
         data = request.get_json()
         required_fields = ['name', 'url', 'price']
         if not data or not all(field in data for field in required_fields):
             return jsonify({'error': 'Name, URL, and price are required'}), 400
-        
-        # Check if category exists
-        category = Category.query.get_or_404(category_id)
         
         name = data['name']
         url = data['url']
@@ -72,61 +72,33 @@ def update_item(item_id):
         if not data or not all(field in data for field in required_fields):
             return jsonify({'error': 'Name, URL, and price are required'}), 400
         
-        name = data['name']
-        url = data['url']
-        price = float(data['price'])
-        title = data.get('title')
-        author = data.get('author')
-        director = data.get('director')
-        year = data.get('year')
-        external_id = data.get('trackId') or data.get('external_id')  # Support both trackId and external_id
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            UPDATE items 
-            SET name = ?, title = ?, author = ?, director = ?, year = ?, url = ?, price = ?, external_id = ?
-            WHERE id = ?
-        ''', (name, title, author, director, year, url, price, external_id, item_id))
-        
-        if cursor.rowcount == 0:
-            conn.close()
+        # Find the item
+        item = Item.query.get(item_id)
+        if not item:
             return jsonify({'error': 'Item not found'}), 404
         
-        cursor.execute('''
-            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
-            FROM items WHERE id = ?
-        ''', (item_id,))
-        row = cursor.fetchone()
+        # Update item fields
+        item.name = data['name']
+        item.url = data['url']
+        item.price = float(data['price'])
+        item.title = data.get('title')
+        item.author = data.get('author')
+        item.director = data.get('director')
+        item.year = data.get('year')
+        item.external_id = data.get('trackId') or data.get('external_id')  # Support both trackId and external_id
+        item.last_updated = datetime.utcnow()
         
-        conn.commit()
-        conn.close()
+        # Save changes
+        db.session.commit()
         
-        if row:
-            item = {
-                'id': row[0],
-                'categoryId': row[1],
-                'name': row[2],
-                'title': row[3],
-                'author': row[4],
-                'director': row[5],
-                'year': row[6],
-                'url': row[7],
-                'price': row[8],
-                'bought': bool(row[9]),
-                'createdAt': row[10] if len(row) > 10 else None,
-                'externalId': row[11] if len(row) > 11 else None,
-                'lastUpdated': row[12] if len(row) > 12 else None
-            }
-            return jsonify(item)
-        else:
-            return jsonify({'error': 'Failed to update item'}), 500
+        # Return updated item
+        return jsonify(item.to_dict())
             
     except ValueError as e:
         return jsonify({'error': 'Invalid price format'}), 400
     except Exception as e:
         print(f"Error updating item: {e}")
+        db.session.rollback()
         return jsonify({'error': 'Failed to update item'}), 500
 
 
@@ -134,22 +106,20 @@ def update_item(item_id):
 def delete_item(item_id):
     """Delete an item."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('DELETE FROM items WHERE id = ?', (item_id,))
-        
-        if cursor.rowcount == 0:
-            conn.close()
+        # Find the item
+        item = Item.query.get(item_id)
+        if not item:
             return jsonify({'error': 'Item not found'}), 404
         
-        conn.commit()
-        conn.close()
+        # Delete the item (cascade delete will handle price history)
+        db.session.delete(item)
+        db.session.commit()
         
         return jsonify({'success': True})
         
     except Exception as e:
         print(f"Error deleting item: {e}")
+        db.session.rollback()
         return jsonify({'error': 'Failed to delete item'}), 500
 
 
@@ -157,52 +127,23 @@ def delete_item(item_id):
 def toggle_item_bought(item_id):
     """Toggle the bought status of an item."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute('SELECT bought FROM items WHERE id = ?', (item_id,))
-        row = cursor.fetchone()
-        
-        if not row:
-            conn.close()
+        # Find the item
+        item = Item.query.get(item_id)
+        if not item:
             return jsonify({'error': 'Item not found'}), 404
         
-        current_bought = bool(row[0])
-        new_bought = not current_bought
+        # Toggle bought status
+        item.bought = not item.bought
         
-        cursor.execute('UPDATE items SET bought = ? WHERE id = ?', (int(new_bought), item_id))
+        # Save changes
+        db.session.commit()
         
-        cursor.execute('''
-            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
-            FROM items WHERE id = ?
-        ''', (item_id,))
-        row = cursor.fetchone()
-        
-        conn.commit()
-        conn.close()
-        
-        if row:
-            item = {
-                'id': row[0],
-                'categoryId': row[1],
-                'name': row[2],
-                'title': row[3],
-                'author': row[4],
-                'director': row[5],
-                'year': row[6],
-                'url': row[7],
-                'price': row[8],
-                'bought': bool(row[9]),
-                'createdAt': row[10] if len(row) > 10 else None,
-                'externalId': row[11] if len(row) > 11 else None,
-                'lastUpdated': row[12] if len(row) > 12 else None
-            }
-            return jsonify(item)
-        else:
-            return jsonify({'error': 'Failed to update item'}), 500
+        # Return updated item
+        return jsonify(item.to_dict())
         
     except Exception as e:
         print(f"Error toggling item bought status: {e}")
+        db.session.rollback()
         return jsonify({'error': 'Failed to update item status'}), 500
 
 
@@ -210,37 +151,26 @@ def toggle_item_bought(item_id):
 def refresh_item_price(item_id):
     """Refresh the price of an item by re-searching the relevant API."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        # Get the item and its category information using SQLAlchemy
+        item = Item.query.join(Category).filter(Item.id == item_id).first()
         
-        # Get the item and its category information
-        cursor.execute('''
-            SELECT i.id, i.category_id, i.name, i.title, i.author, i.director, i.year, i.url, i.price, i.bought, i.created_at, i.external_id,
-                   c.type as category_type
-            FROM items i
-            JOIN categories c ON i.category_id = c.id
-            WHERE i.id = ?
-        ''', (item_id,))
-        row = cursor.fetchone()
-        
-        if not row:
-            conn.close()
+        if not item:
             return jsonify({'error': 'Item not found'}), 404
         
         item_data = {
-            'id': row[0],
-            'categoryId': row[1],
-            'name': row[2],
-            'title': row[3],
-            'author': row[4],
-            'director': row[5],
-            'year': row[6],
-            'url': row[7],
-            'price': row[8],
-            'bought': bool(row[9]),
-            'createdAt': row[10],
-            'externalId': row[11],
-            'categoryType': row[12]
+            'id': item.id,
+            'categoryId': item.category_id,
+            'name': item.name,
+            'title': item.title,
+            'author': item.author,
+            'director': item.director,
+            'year': item.year,
+            'url': item.url,
+            'price': item.price,
+            'bought': item.bought,
+            'createdAt': item.created_at.isoformat() if item.created_at else None,
+            'externalId': item.external_id,
+            'categoryType': item.category.type
         }
         
         # Determine what to search for based on the item's data and category type
@@ -306,55 +236,36 @@ def refresh_item_price(item_id):
         
         # Save price change to history if price actually changed
         if new_price != item_data['price']:
-            cursor.execute('''
-                INSERT INTO price_history (item_id, old_price, new_price, price_source, search_query)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (item_id, item_data['price'], new_price, price_source, search_query))
+            price_history = PriceHistory(
+                item_id=item_id,
+                old_price=item_data['price'],
+                new_price=new_price,
+                price_source=price_source,
+                search_query=search_query
+            )
+            db.session.add(price_history)
         
         # Update the item with the new price and timestamp
-        cursor.execute('''
-            UPDATE items SET price = ?, last_updated = CURRENT_TIMESTAMP WHERE id = ?
-        ''', (new_price, item_id))
+        item.price = new_price
+        item.last_updated = datetime.utcnow()
         
-        # Get the updated item
-        cursor.execute('''
-            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
-            FROM items WHERE id = ?
-        ''', (item_id,))
-        updated_row = cursor.fetchone()
+        # Commit changes
+        db.session.commit()
         
-        conn.commit()
-        conn.close()
-        
-        if updated_row:
-            updated_item = {
-                'id': updated_row[0],
-                'categoryId': updated_row[1],
-                'name': updated_row[2],
-                'title': updated_row[3],
-                'author': updated_row[4],
-                'director': updated_row[5],
-                'year': updated_row[6],
-                'url': updated_row[7],
-                'price': updated_row[8],
-                'bought': bool(updated_row[9]),
-                'createdAt': updated_row[10],
-                'externalId': updated_row[11],
-                'lastUpdated': updated_row[12],
-                'priceRefresh': {
-                    'oldPrice': item_data['price'],
-                    'newPrice': updated_row[8],
-                    'source': price_source,
-                    'searchQuery': search_query,
-                    'updated': new_price != item_data['price']
-                }
-            }
-            return jsonify(updated_item)
-        else:
-            return jsonify({'error': 'Failed to refresh item price'}), 500
+        # Return updated item with refresh information
+        updated_item = item.to_dict()
+        updated_item['priceRefresh'] = {
+            'oldPrice': item_data['price'],
+            'newPrice': item.price,
+            'source': price_source,
+            'searchQuery': search_query,
+            'updated': new_price != item_data['price']
+        }
+        return jsonify(updated_item)
         
     except Exception as e:
         print(f"Error refreshing item price: {e}")
+        db.session.rollback()
         return jsonify({'error': 'Failed to refresh item price'}), 500
 
 
@@ -362,41 +273,25 @@ def refresh_item_price(item_id):
 def get_item_price_history(item_id):
     """Get price history for an item."""
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
         # Verify item exists
-        cursor.execute('SELECT id, name FROM items WHERE id = ?', (item_id,))
-        item = cursor.fetchone()
-        
+        item = Item.query.get(item_id)
         if not item:
-            conn.close()
             return jsonify({'error': 'Item not found'}), 404
         
-        # Get price history
-        cursor.execute('''
-            SELECT old_price, new_price, price_source, search_query, created_at
-            FROM price_history 
-            WHERE item_id = ?
-            ORDER BY created_at ASC
-        ''', (item_id,))
-        
-        history_rows = cursor.fetchall()
-        conn.close()
-        
+        # Get price history using SQLAlchemy relationship
         history = []
-        for row in history_rows:
+        for price_history in item.price_history:
             history.append({
-                'oldPrice': row[0],
-                'newPrice': row[1],
-                'priceSource': row[2],
-                'searchQuery': row[3],
-                'date': row[4]
+                'oldPrice': price_history.old_price,
+                'newPrice': price_history.new_price,
+                'priceSource': price_history.price_source,
+                'searchQuery': price_history.search_query,
+                'date': price_history.created_at.isoformat() if price_history.created_at else None
             })
         
         return jsonify({
             'itemId': item_id,
-            'itemName': item[1],
+            'itemName': item.name,
             'priceHistory': history
         })
         

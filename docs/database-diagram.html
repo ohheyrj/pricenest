@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Tracker - Database Schema</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .diagram-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .export-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Price Tracker - Database Schema</h1>
+        
+        <div class="export-info">
+            <strong>💡 To export as image:</strong> Right-click on the diagram → "Save image as..." or use browser developer tools to capture the SVG
+        </div>
+
+        <div class="diagram-container">
+            <div class="mermaid">
+erDiagram
+    categories ||--o{ items : "has many"
+    categories ||--o{ pending_movie_searches : "has many"
+    items ||--o{ price_history : "has many"
+
+    categories {
+        int id PK "Primary Key"
+        string name "Category name"
+        string type "general|books|movies"
+        boolean book_lookup_enabled "Enable book API lookup"
+        string book_lookup_source "auto|google_books|kobo"
+        datetime created_at "Creation timestamp"
+    }
+
+    items {
+        int id PK "Primary Key"
+        int category_id FK "Foreign Key → categories.id"
+        string name "Item display name"
+        string title "Book/Movie title"
+        string author "Book author"
+        string director "Movie director"
+        int year "Publication/Release year"
+        string url "Store URL"
+        float price "Current price"
+        boolean bought "Purchase status"
+        string external_id "API tracking ID (iTunes trackId, etc.)"
+        datetime created_at "Creation timestamp"
+        datetime last_updated "Last price update"
+    }
+
+    price_history {
+        int id PK "Primary Key"
+        int item_id FK "Foreign Key → items.id"
+        float old_price "Previous price"
+        float new_price "Updated price"
+        string price_source "google_books|apple|kobo|manual"
+        string search_query "API search query used"
+        datetime created_at "Price change timestamp"
+    }
+
+    pending_movie_searches {
+        int id PK "Primary Key"
+        int category_id FK "Foreign Key → categories.id"
+        string title "Movie title to search"
+        string director "Movie director"
+        int year "Release year"
+        string csv_row_data "Original CSV data"
+        string status "pending|completed|failed"
+        int retry_count "Number of retry attempts"
+        datetime last_attempted "Last search attempt"
+        datetime created_at "Creation timestamp"
+    }
+            </div>
+        </div>
+
+        <div style="margin-top: 30px; color: #666; font-size: 14px;">
+            <h3>Table Relationships:</h3>
+            <ul>
+                <li><strong>categories → items:</strong> One category can have many items</li>
+                <li><strong>items → price_history:</strong> One item can have many price changes</li>
+                <li><strong>categories → pending_movie_searches:</strong> Batch import support</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#2196f3',
+                primaryTextColor: '#333',
+                primaryBorderColor: '#1976d2',
+                lineColor: '#666',
+                secondaryColor: '#f5f5f5',
+                tertiaryColor: '#fff'
+            }
+        });
+    </script>
+</body>
+</html>

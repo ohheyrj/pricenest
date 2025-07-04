@@ -66,10 +66,10 @@ def migrate_existing_data():
                     category = Category(
                         id=row['id'],
                         name=row['name'],
-                        type=row.get('type', 'general'),
-                        book_lookup_enabled=bool(row.get('book_lookup_enabled', 0)),
-                        book_lookup_source=row.get('book_lookup_source', 'auto'),
-                        created_at=datetime.fromisoformat(row['created_at']) if row.get('created_at') else datetime.utcnow()
+                        type=row['type'] if 'type' in row.keys() else 'general',
+                        book_lookup_enabled=bool(row['book_lookup_enabled'] if 'book_lookup_enabled' in row.keys() else 0),
+                        book_lookup_source=row['book_lookup_source'] if 'book_lookup_source' in row.keys() else 'auto',
+                        created_at=datetime.fromisoformat(row['created_at']) if 'created_at' in row.keys() and row['created_at'] else datetime.utcnow()
                     )
                     db.session.add(category)
         
@@ -84,16 +84,16 @@ def migrate_existing_data():
                         id=row['id'],
                         category_id=row['category_id'],
                         name=row['name'],
-                        title=row.get('title'),
-                        author=row.get('author'),
-                        director=row.get('director'),
-                        year=row.get('year'),
+                        title=row['title'] if 'title' in row.keys() else None,
+                        author=row['author'] if 'author' in row.keys() else None,
+                        director=row['director'] if 'director' in row.keys() else None,
+                        year=row['year'] if 'year' in row.keys() else None,
                         url=row['url'],
                         price=row['price'],
-                        bought=bool(row.get('bought', 0)),
-                        external_id=row.get('external_id'),
-                        created_at=datetime.fromisoformat(row['created_at']) if row.get('created_at') else datetime.utcnow(),
-                        last_updated=datetime.fromisoformat(row['last_updated']) if row.get('last_updated') else None
+                        bought=bool(row['bought'] if 'bought' in row.keys() else 0),
+                        external_id=row['external_id'] if 'external_id' in row.keys() else None,
+                        created_at=datetime.fromisoformat(row['created_at']) if 'created_at' in row.keys() and row['created_at'] else datetime.utcnow(),
+                        last_updated=datetime.fromisoformat(row['last_updated']) if 'last_updated' in row.keys() and row['last_updated'] else None
                     )
                     db.session.add(item)
         
@@ -109,9 +109,9 @@ def migrate_existing_data():
                         item_id=row['item_id'],
                         old_price=row['old_price'],
                         new_price=row['new_price'],
-                        price_source=row.get('price_source'),
-                        search_query=row.get('search_query'),
-                        created_at=datetime.fromisoformat(row['created_at']) if row.get('created_at') else datetime.utcnow()
+                        price_source=row['price_source'] if 'price_source' in row.keys() else None,
+                        search_query=row['search_query'] if 'search_query' in row.keys() else None,
+                        created_at=datetime.fromisoformat(row['created_at']) if 'created_at' in row.keys() and row['created_at'] else datetime.utcnow()
                     )
                     db.session.add(price_history)
         
@@ -126,13 +126,13 @@ def migrate_existing_data():
                         id=row['id'],
                         category_id=row['category_id'],
                         title=row['title'],
-                        director=row.get('director'),
-                        year=row.get('year'),
-                        csv_row_data=row.get('csv_row_data'),
-                        status=row.get('status', 'pending'),
-                        retry_count=row.get('retry_count', 0),
-                        last_attempted=datetime.fromisoformat(row['last_attempted']) if row.get('last_attempted') else None,
-                        created_at=datetime.fromisoformat(row['created_at']) if row.get('created_at') else datetime.utcnow()
+                        director=row['director'] if 'director' in row.keys() else None,
+                        year=row['year'] if 'year' in row.keys() else None,
+                        csv_row_data=row['csv_row_data'] if 'csv_row_data' in row.keys() else None,
+                        status=row['status'] if 'status' in row.keys() else 'pending',
+                        retry_count=row['retry_count'] if 'retry_count' in row.keys() else 0,
+                        last_attempted=datetime.fromisoformat(row['last_attempted']) if 'last_attempted' in row.keys() and row['last_attempted'] else None,
+                        created_at=datetime.fromisoformat(row['created_at']) if 'created_at' in row.keys() and row['created_at'] else datetime.utcnow()
                     )
                     db.session.add(pending_search)
         
