@@ -10,36 +10,37 @@ import os
 import tempfile
 
 
+@pytest.fixture
+def js_test_runner():
+    """Create a temporary JS file to run tests."""
+    def runner(js_code):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+            # Write test code
+            f.write(js_code)
+            f.flush()
+            
+            try:
+                # Run with Node.js
+                result = subprocess.run(
+                    ['node', f.name],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                
+                if result.returncode != 0:
+                    raise Exception(f"JavaScript error: {result.stderr}")
+                
+                return result.stdout.strip()
+            finally:
+                # Clean up
+                os.unlink(f.name)
+    
+    return runner
+
+
 class TestJavaScriptFunctions:
     """Test pure JavaScript functions from script.js"""
-    
-    @pytest.fixture
-    def js_test_runner(self):
-        """Create a temporary JS file to run tests."""
-        def runner(js_code):
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
-                # Write test code
-                f.write(js_code)
-                f.flush()
-                
-                try:
-                    # Run with Node.js
-                    result = subprocess.run(
-                        ['node', f.name],
-                        capture_output=True,
-                        text=True,
-                        timeout=5
-                    )
-                    
-                    if result.returncode != 0:
-                        raise Exception(f"JavaScript error: {result.stderr}")
-                    
-                    return result.stdout.strip()
-                finally:
-                    # Clean up
-                    os.unlink(f.name)
-        
-        return runner
     
     def test_navigation_url_encoding(self, js_test_runner):
         """Test URL encoding for category navigation."""

@@ -6,8 +6,7 @@
   
   # System packages for UI testing
   packages = with pkgs; [
-    chromium
-    chromedriver
+    electron-chromedriver  # ChromeDriver for Selenium tests
     nodejs  # For JavaScript unit tests
   ] ++ (with pkgs.python311Packages; [
     pip

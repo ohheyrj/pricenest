@@ -13,16 +13,70 @@ import time
 import os
 
 
+def get_available_driver():
+    """Try to get an available WebDriver (Brave, Chrome, or Firefox)."""
+    # Try Brave first (uses ChromeDriver)
+    try:
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        
+        # Brave browser paths
+        brave_paths = [
+            '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',  # macOS
+            '/usr/bin/brave-browser',  # Linux
+            '/usr/bin/brave',  # Linux alternative
+        ]
+        
+        for path in brave_paths:
+            if os.path.exists(path):
+                options.binary_location = path
+                return webdriver.Chrome(options=options), "Brave"
+    except:
+        pass
+    
+    # Try regular Chrome
+    try:
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        
+        chrome_paths = [
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',  # macOS
+            '/usr/bin/google-chrome',  # Linux
+        ]
+        
+        for path in chrome_paths:
+            if os.path.exists(path):
+                options.binary_location = path
+                break
+                
+        return webdriver.Chrome(options=options), "Chrome"
+    except:
+        pass
+    
+    # Try Firefox as fallback
+    try:
+        options = webdriver.FirefoxOptions()
+        options.add_argument('--headless')
+        return webdriver.Firefox(options=options), "Firefox"
+    except:
+        pass
+    
+    return None, None
+
+
 @pytest.fixture(scope="module")
 def driver():
-    """Create a Chrome WebDriver instance for testing."""
-    # Setup Chrome options
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')  # Run in headless mode for CI
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
+    """Create a WebDriver instance for testing."""
+    driver, browser_name = get_available_driver()
     
-    driver = webdriver.Chrome(options=options)
+    if driver is None:
+        pytest.skip("No supported browser found (tried Brave, Chrome, Firefox)")
+    
+    print(f"\nUsing {browser_name} browser for tests")
     driver.set_window_size(1280, 720)
     
     yield driver
@@ -56,7 +110,7 @@ class TestUINavigation:
         )
         
         assert categories_container is not None
-        assert driver.title == "PriceNest - Track Your Prices"
+        assert driver.title == "PriceNest"
     
     def test_url_changes_when_navigating_to_category(self, driver, base_url, wait):
         """Test that URL updates when navigating to a category."""

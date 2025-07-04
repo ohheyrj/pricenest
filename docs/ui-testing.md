@@ -13,18 +13,32 @@ PriceNest uses two types of UI testing:
 
 ### For Selenium Tests
 
-1. **Chrome Browser** - Tests use Chrome by default
-2. **ChromeDriver** - WebDriver for Chrome automation
-   
-   On macOS:
-   ```bash
-   brew install chromedriver
-   ```
-   
-   On Linux:
-   ```bash
-   sudo apt-get install chromium-chromedriver
-   ```
+The tests support multiple browsers (tried in this order):
+1. **Brave Browser** (recommended if you have it)
+2. **Google Chrome**
+3. **Firefox** (fallback)
+
+#### For Brave Browser:
+```bash
+# Brave uses ChromeDriver (same as Chrome)
+brew install chromedriver  # macOS
+```
+
+#### For Firefox:
+```bash
+# Firefox uses GeckoDriver
+brew install geckodriver  # macOS
+sudo apt-get install firefox-geckodriver  # Linux
+```
+
+#### For Chrome:
+```bash
+# If you prefer Chrome
+brew install --cask google-chrome  # macOS
+brew install chromedriver  # macOS
+```
+
+**Note:** The test suite will automatically detect and use whichever browser you have installed.
 
 3. **Python Dependencies** - Already included in `requirements.txt`:
    ```bash
