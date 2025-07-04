@@ -1,9 +1,10 @@
 """
-Item management routes.
+Item management routes using SQLAlchemy.
 """
 
 from flask import Blueprint, request, jsonify
-from src.database.connection import get_db_connection
+from datetime import datetime
+from src.models.database import db, Category, Item, PriceHistory
 
 items_bp = Blueprint('items', __name__)
 
@@ -17,6 +18,9 @@ def create_item(category_id):
         if not data or not all(field in data for field in required_fields):
             return jsonify({'error': 'Name, URL, and price are required'}), 400
         
+        # Check if category exists
+        category = Category.query.get_or_404(category_id)
+        
         name = data['name']
         url = data['url']
         price = float(data['price'])
@@ -26,64 +30,36 @@ def create_item(category_id):
         year = data.get('year')
         external_id = data.get('trackId') or data.get('external_id')  # Support both trackId and external_id
         
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Check if category exists
-        cursor.execute('SELECT id, type FROM categories WHERE id = ?', (category_id,))
-        category_row = cursor.fetchone()
-        if not category_row:
-            conn.close()
-            return jsonify({'error': 'Category not found'}), 404
-        
-        category_type = category_row[1]
-        
         # For book categories, try to parse title/author if not provided
-        if category_type == 'books' and not title and not author:
+        if category.type == 'books' and not title and not author:
             by_index = name.rfind(' by ')
             if by_index > 0:
                 title = name[:by_index]
                 author = name[by_index + 4:]
         
-        cursor.execute('''
-            INSERT INTO items (category_id, name, title, author, director, year, url, price, bought, external_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
-        ''', (category_id, name, title, author, director, year, url, price, external_id))
+        item = Item(
+            category_id=category_id,
+            name=name,
+            title=title,
+            author=author,
+            director=director,
+            year=year,
+            url=url,
+            price=price,
+            bought=False,
+            external_id=external_id
+        )
         
-        item_id = cursor.lastrowid
-        cursor.execute('''
-            SELECT id, category_id, name, title, author, director, year, url, price, bought, created_at, external_id, last_updated
-            FROM items WHERE id = ?
-        ''', (item_id,))
-        row = cursor.fetchone()
+        db.session.add(item)
+        db.session.commit()
         
-        conn.commit()
-        conn.close()
-        
-        if row:
-            item = {
-                'id': row[0],
-                'categoryId': row[1],
-                'name': row[2],
-                'title': row[3],
-                'author': row[4],
-                'director': row[5],
-                'year': row[6],
-                'url': row[7],
-                'price': row[8],
-                'bought': bool(row[9]),
-                'createdAt': row[10] if len(row) > 10 else None,
-                'externalId': row[11] if len(row) > 11 else None,
-                'lastUpdated': row[12] if len(row) > 12 else None
-            }
-            return jsonify(item), 201
-        else:
-            return jsonify({'error': 'Failed to create item'}), 500
+        return jsonify(item.to_dict()), 201
             
     except ValueError as e:
         return jsonify({'error': 'Invalid price format'}), 400
     except Exception as e:
         print(f"Error creating item: {e}")
+        db.session.rollback()
         return jsonify({'error': 'Failed to create item'}), 500
 
 
