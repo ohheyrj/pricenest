@@ -10,15 +10,18 @@ from src.config import Config
 
 def init_app(app: Flask):
     """Initialize SQLAlchemy with the Flask app."""
+    # Get absolute path for database
+    db_path = os.path.abspath(Config.DATABASE_PATH)
+    
     # Configure SQLAlchemy
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{Config.DATABASE_PATH}'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # Initialize database
     db.init_app(app)
     
     # Create database directory if it doesn't exist
-    db_dir = os.path.dirname(Config.DATABASE_PATH)
+    db_dir = os.path.dirname(db_path)
     if db_dir:
         os.makedirs(db_dir, exist_ok=True)
     
