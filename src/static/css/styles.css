@@ -1063,6 +1063,23 @@ h1 i {
     font-weight: 500;
 }
 
+/* Add indeterminate progress animation */
+.progress-fill.indeterminate {
+    width: 100% !important;
+    background: linear-gradient(to right, #4CAF50 0%, #66BB6A 50%, #4CAF50 100%);
+    background-size: 200% 100%;
+    animation: progressIndeterminate 1.5s linear infinite;
+}
+
+@keyframes progressIndeterminate {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
 /* Import Results */
 .import-results {
     margin-top: 20px;
