@@ -139,6 +139,7 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
                 'price': price_info['price'],
                 'url': apple_url,
                 'priceSource': price_info['source'],
+                'currency': price_info.get('currency', 'GBP'),
                 'artwork': item.get('artworkUrl100', ''),
                 'description': item.get('longDescription', item.get('shortDescription', '')),
                 'trackId': item.get('trackId')  # Store iTunes track ID for accurate price refresh
@@ -258,6 +259,7 @@ def get_movie_by_track_id(track_id: str) -> Dict[str, Any]:
             'price': price_info['price'],
             'url': apple_url,
             'priceSource': price_info['source'],
+            'currency': price_info.get('currency', 'GBP'),
             'artwork': item.get('artworkUrl100', ''),
             'description': item.get('longDescription', item.get('shortDescription', '')),
             'trackId': item.get('trackId')
@@ -280,6 +282,12 @@ def get_movie_by_track_id(track_id: str) -> Dict[str, Any]:
 
 def get_apple_pricing(item: Dict) -> Dict[str, Any]:
     """Extract pricing information from Apple Store item."""
+    # Get currency from the item (iTunes API returns this)
+    currency = item.get('currency', 'GBP')
+    
+    # Debug: Log the currency being used
+    print(f"💰 DEBUG: Movie '{item.get('trackName', 'Unknown')}' - Currency: {currency}")
+    
     # Prioritize purchase prices over rental prices
     hd_purchase_price = item.get('trackHdPrice')
     purchase_price = item.get('trackPrice') 
@@ -290,28 +298,33 @@ def get_apple_pricing(item: Dict) -> Dict[str, Any]:
     if hd_purchase_price and hd_purchase_price > 0:
         return {
             'price': float(hd_purchase_price),
-            'source': 'apple_hd_purchase'
+            'source': 'apple_hd_purchase',
+            'currency': currency
         }
     elif purchase_price and purchase_price > 0:
         return {
             'price': float(purchase_price),
-            'source': 'apple_purchase'
+            'source': 'apple_purchase',
+            'currency': currency
         }
     elif collection_price and collection_price > 0:
         return {
             'price': float(collection_price),
-            'source': 'apple_collection'
+            'source': 'apple_collection',
+            'currency': currency
         }
     elif rental_price and rental_price > 0:
         return {
             'price': float(rental_price),
-            'source': 'apple_rental'
+            'source': 'apple_rental',
+            'currency': currency
         }
     else:
         # Generate estimated price based on movie characteristics
         return {
             'price': generate_estimated_movie_price(item),
-            'source': 'estimated'
+            'source': 'estimated',
+            'currency': 'GBP'  # Default to GBP for estimates
         }
 
 

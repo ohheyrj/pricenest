@@ -343,10 +343,51 @@ def preview_csv():
         error_movies = len([r for r in preview_results if r['status'] == 'error'])
         duplicate_movies = len([r for r in preview_results if r['status'] == 'duplicate'])
         
+        # Convert preview results to the format expected by the front-end
+        formatted_results = []
+        for result in preview_results:
+            formatted_result = {
+                'title': result['csv_data']['title'],
+                'director': result['csv_data']['director'],
+                'year': result['csv_data']['year'],
+                'price': None,
+                'url': None,
+                'status': result['status'],
+                'error': result.get('error'),
+                'artwork': None
+            }
+            
+            # If we have a best match, use its data
+            if result.get('best_match'):
+                movie = result['best_match']
+                formatted_result.update({
+                    'title': movie.get('title', result['csv_data']['title']),
+                    'director': movie.get('director', result['csv_data']['director']),
+                    'year': movie.get('year', result['csv_data']['year']),
+                    'price': movie.get('price'),
+                    'url': movie.get('url'),
+                    'artwork': movie.get('artworkUrl') or movie.get('imageUrl') or movie.get('artwork'),
+                    'currency': movie.get('currency', 'GBP')
+                })
+            
+            # Add duplicate information if applicable
+            if result['status'] == 'duplicate' and result.get('existing_item'):
+                existing = result['existing_item']
+                formatted_result.update({
+                    'title': existing.get('title', result['csv_data']['title']),
+                    'director': existing.get('director', result['csv_data']['director']),
+                    'year': existing.get('year', result['csv_data']['year']),
+                    'price': existing.get('price'),
+                    'url': existing.get('url')
+                })
+            
+            formatted_results.append(formatted_result)
+
         return jsonify({
             'success': True,
             'category_id': category_id,
             'category_name': category_name,
+            'results': formatted_results,  # This matches what the front-end expects
             'summary': {
                 'total': total_movies,
                 'found': found_movies,
@@ -354,8 +395,7 @@ def preview_csv():
                 'pending': pending_movies,
                 'errors': error_movies,
                 'duplicates': duplicate_movies
-            },
-            'preview_results': preview_results
+            }
         })
         
     except Exception as e:
@@ -408,6 +448,13 @@ def import_confirmed():
                 # Create display name
                 display_name = movie_data.get('name') or f"{movie_data['title']} ({movie_data.get('year', 'Unknown')})"
                 
+                # Ensure required fields have defaults
+                title = movie_data.get('title', 'Unknown Title')
+                director = movie_data.get('director') or 'Unknown Director'
+                year = movie_data.get('year')
+                url = movie_data.get('url', f"https://tv.apple.com/search?term={requests.utils.quote(title)}")
+                price = movie_data.get('price', 0.0)
+                
                 # Insert into database
                 cursor.execute('''
                     INSERT INTO items (category_id, name, title, director, year, url, price, bought)
@@ -415,25 +462,27 @@ def import_confirmed():
                 ''', (
                     category_id,
                     display_name,
-                    movie_data['title'],
-                    movie_data.get('director'),
-                    movie_data.get('year'),
-                    movie_data['url'],
-                    movie_data['price']
+                    title,
+                    director,
+                    year,
+                    url,
+                    price
                 ))
                 
                 results['imported'] += 1
                 results['imported_movies'].append({
-                    'title': movie_data['title'],
-                    'director': movie_data.get('director'),
-                    'year': movie_data.get('year'),
-                    'price': movie_data['price'],
+                    'title': title,
+                    'director': director,
+                    'year': year,
+                    'price': price,
                     'priceSource': movie_data.get('priceSource', 'apple')
                 })
                 
             except Exception as e:
                 results['failed'] += 1
                 results['errors'].append(f"Movie {i+1}: {str(e)}")
+                print(f"Error importing movie {i+1}: {e}")
+                print(f"Movie data: {movie_data}")
                 continue
         
         conn.commit()
@@ -442,6 +491,7 @@ def import_confirmed():
         return jsonify({
             'success': True,
             'message': f'Imported {results["imported"]} movies into "{category_name}" category',
+            'imported_count': results['imported'],
             'results': results
         })
         
