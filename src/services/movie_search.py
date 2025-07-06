@@ -285,9 +285,7 @@ def get_apple_pricing(item: Dict) -> Dict[str, Any]:
     currency = item.get("currency", "GBP")
 
     # Debug: Log the currency being used
-    print(
-        f"💰 DEBUG: Movie '{item.get('trackName', 'Unknown')}' - Currency: {currency}"
-    )
+    print(f"💰 DEBUG: Movie '{item.get('trackName', 'Unknown')}' - Currency: {currency}")
 
     # Prioritize purchase prices over rental prices
     hd_purchase_price = item.get("trackHdPrice")

@@ -628,9 +628,15 @@ def process_pending():
         failed = 0
 
         for search in pending_searches:
-            search_id, category_id, title, director, year, csv_row_data, retry_count = (
-                search
-            )
+            (
+                search_id,
+                category_id,
+                title,
+                director,
+                year,
+                csv_row_data,
+                retry_count,
+            ) = search
 
             try:
                 # Update last_attempted and increment retry count
