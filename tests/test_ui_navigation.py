@@ -33,7 +33,7 @@ def get_available_driver():
             if os.path.exists(path):
                 options.binary_location = path
                 return webdriver.Chrome(options=options), "Brave"
-    except:
+    except Exception:
         pass
 
     # Try regular Chrome
@@ -54,7 +54,7 @@ def get_available_driver():
                 break
 
         return webdriver.Chrome(options=options), "Chrome"
-    except:
+    except Exception:
         pass
 
     # Try Firefox as fallback
@@ -62,7 +62,7 @@ def get_available_driver():
         options = webdriver.FirefoxOptions()
         options.add_argument("--headless")
         return webdriver.Firefox(options=options), "Firefox"
-    except:
+    except Exception:
         pass
 
     return None, None
@@ -204,9 +204,6 @@ class TestUINavigation:
         category_block = wait.until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block"))
         )
-        category_name = category_block.find_element(
-            By.CSS_SELECTOR, ".category-name"
-        ).text
         category_block.click()
 
         # Wait for URL change
