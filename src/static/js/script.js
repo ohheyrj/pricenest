@@ -19,6 +19,33 @@ class PriceNest {
             () => this.loadData()
         );
         
+        // Initialize search services
+        this.bookSearch = new BookSearch(
+            this.api,
+            (message) => this.showError(message),
+            (message) => this.showSuccess(message)
+        );
+        
+        this.movieSearch = new MovieSearch(
+            this.api,
+            (message) => this.showError(message),
+            (message) => this.showSuccess(message)
+        );
+        
+        this.searchManager = new SearchManager(
+            this.movieSearch,
+            this.bookSearch,
+            (message) => this.showError(message),
+            (message) => this.showSuccess(message),
+            (newItem) => {
+                // Add the new item to the current category and refresh the view
+                if (this.currentCategoryIndex !== null) {
+                    this.categories[this.currentCategoryIndex].items.push(newItem);
+                    this.render();
+                }
+            }
+        );
+        
         this.initializeElements();
         this.bindEvents();
         this.initializeRouting();
@@ -322,6 +349,9 @@ class PriceNest {
         this.currentItemIndex = itemIndex;
         
         const category = this.categories[categoryIndex];
+        
+        // Set the current category in the search manager
+        this.searchManager.setCurrentCategory(category);
         const isBookCategory = category.type === 'books';
         const isMovieCategory = category.type === 'movies';
         
@@ -840,35 +870,15 @@ class PriceNest {
     }
     
     async performKoboSearch(query) {
-        // Check if book lookup is enabled for current category
+        // Delegate to the book search service
         const category = this.categories[this.currentCategoryIndex];
-        if (!category || !category.bookLookupEnabled) {
-            return { error: 'Book lookup is not enabled for this category.' };
-        }
-
-        try {
-            // Pass the category's preferred source to the API
-            const source = category.bookLookupSource || 'auto';
-            return await this.api.searchBooks(query, source);
-        } catch (error) {
-            console.error('Book search error:', error);
-            return { error: 'Failed to search for books. Please try again.' };
-        }
+        return await this.bookSearch.search(query, category);
     }
     
     async performMovieSearch(query) {
-        // Check if this is a movie category
+        // Delegate to the movie search service
         const category = this.categories[this.currentCategoryIndex];
-        if (!category || category.type !== 'movies') {
-            return { error: 'Movie search is only available for movie categories.' };
-        }
-
-        try {
-            return await this.api.searchMovies(query);
-        } catch (error) {
-            console.error('Movie search error:', error);
-            return { error: 'Failed to search for movies. Please try again.' };
-        }
+        return await this.movieSearch.search(query, category);
     }
     
     displaySearchResults(container, results, isInItemModal) {
@@ -885,20 +895,7 @@ class PriceNest {
                 return;
             }
             
-            const booksHtml = results.books.map(book => {
-                const priceSourceIndicator = this.getPriceSourceIndicator(book.priceSource);
-                return `
-                <div class="search-result-item" onclick="app.selectKoboBook(${JSON.stringify(book).replace(/"/g, '&quot;')}, ${isInItemModal})">
-                    <div class="search-result-title">${book.title}</div>
-                    <div class="search-result-author">by ${book.author}</div>
-                    <div class="search-result-price">
-                        £${book.price.toFixed(2)} 
-                        ${priceSourceIndicator}
-                    </div>
-                </div>
-                `;
-            }).join('');
-            
+            const booksHtml = this.bookSearch.generateResultsHTML(results.books, isInItemModal, this.getPriceSourceIndicator.bind(this));
             container.innerHTML = booksHtml;
         }, 1000);
     }
@@ -917,90 +914,60 @@ class PriceNest {
                 return;
             }
             
-            const moviesHtml = results.movies.map(movie => {
-                const priceSourceIndicator = this.getPriceSourceIndicator(movie.priceSource);
-                return `
-                <div class="search-result-item" onclick="app.selectMovie(${JSON.stringify(movie).replace(/"/g, '&quot;')}, ${isInItemModal})">
-                    <div class="search-result-title">${movie.title}</div>
-                    <div class="search-result-author">Directed by ${movie.director} (${movie.year || 'Unknown Year'})</div>
-                    <div class="search-result-price">
-                        £${movie.price.toFixed(2)} 
-                        ${priceSourceIndicator}
-                    </div>
-                </div>
-                `;
-            }).join('');
-            
+            const moviesHtml = this.movieSearch.generateResultsHTML(results.movies, isInItemModal, this.getPriceSourceIndicator.bind(this));
             container.innerHTML = moviesHtml;
         }, 1000);
     }
     
     async selectKoboBook(book, isInItemModal) {
         if (isInItemModal) {
-            this.itemNameInput.value = book.name || `${book.title} by ${book.author}`;
-            this.itemTitleInput.value = book.title;
-            this.itemAuthorInput.value = book.author;
-            this.itemUrlInput.value = book.url;
-            this.itemPriceInput.value = book.price.toFixed(2);
-            this.koboSearchResults.innerHTML = '';
-            this.koboSearchQuery.value = '';
+            // Use the book search service to populate the form
+            this.bookSearch.populateItemForm(book, {
+                itemNameInput: this.itemNameInput,
+                itemTitleInput: this.itemTitleInput,
+                itemAuthorInput: this.itemAuthorInput,
+                itemUrlInput: this.itemUrlInput,
+                itemPriceInput: this.itemPriceInput,
+                koboSearchResults: this.koboSearchResults,
+                koboSearchQuery: this.koboSearchQuery
+            });
         } else {
-            try {
-                const category = this.categories[this.currentCategoryIndex];
-                // For books, send both the display name and separate title/author
-                const displayName = book.name || `${book.title} by ${book.author}`;
-                const newItem = await this.api.createItem(
-                    category.id, 
-                    displayName, 
-                    book.url, 
-                    book.price, 
-                    book.title, 
-                    book.author
-                );
-                newItem.priceSource = book.priceSource; // Add price source to the item
+            // Use the book search service to add to category
+            const category = this.categories[this.currentCategoryIndex];
+            const result = await this.bookSearch.addToCategory(book, category, (newItem) => {
                 this.categories[this.currentCategoryIndex].items.push(newItem);
                 this.render();
+            });
+            
+            if (result.success) {
                 this.closeKoboModal();
-            } catch (error) {
-                console.error('Failed to add book:', error);
-                this.showError('Failed to add book');
             }
         }
     }
     
     async selectMovie(movie, isInItemModal) {
         if (isInItemModal) {
-            this.itemNameInput.value = movie.name || `${movie.title} (${movie.year})`;
-            this.itemTitleMovieInput.value = movie.title;
-            this.itemDirectorInput.value = movie.director;
-            this.itemYearInput.value = movie.year || '';
-            this.itemUrlInput.value = movie.url;
-            this.itemPriceInput.value = movie.price.toFixed(2);
-            this.movieSearchResults.innerHTML = '';
-            this.movieSearchQuery.value = '';
+            // Use the movie search service to populate the form
+            this.movieSearch.populateItemForm(movie, {
+                itemNameInput: this.itemNameInput,
+                itemTitleMovieInput: this.itemTitleMovieInput,
+                itemDirectorInput: this.itemDirectorInput,
+                itemYearInput: this.itemYearInput,
+                itemUrlInput: this.itemUrlInput,
+                itemPriceInput: this.itemPriceInput,
+                movieSearchResults: this.movieSearchResults,
+                movieSearchQuery: this.movieSearchQuery
+            });
         } else {
-            try {
-                const category = this.categories[this.currentCategoryIndex];
-                // For movies, send display name and separate movie fields
-                const displayName = movie.name || `${movie.title} (${movie.year})`;
-                const newItem = await this.api.createItem(
-                    category.id, 
-                    displayName, 
-                    movie.url, 
-                    movie.price, 
-                    movie.title, 
-                    null, // author (not used for movies)
-                    movie.director,
-                    movie.year,
-                    movie.trackId  // Include iTunes track ID for accurate price refresh
-                );
-                newItem.priceSource = movie.priceSource; // Add price source to the item
+            // Use the movie search service to add to category
+            const category = this.categories[this.currentCategoryIndex];
+            const result = await this.movieSearch.addToCategory(movie, category, (newItem) => {
                 this.categories[this.currentCategoryIndex].items.push(newItem);
                 this.render();
+            });
+            
+            if (result.success) {
                 this.closeMovieModal();
-            } catch (error) {
-                console.error('Failed to add movie:', error);
-                this.showError('Failed to add movie');
             }
         }
     }
@@ -1753,3 +1720,8 @@ const app = new PriceNest();
 // Make it available globally for onclick handlers and CSV importer access
 window.priceNest = app;
 window.app = app;
+
+// Make search services globally available for onclick handlers in generated HTML
+window.movieSearch = app.movieSearch;
+window.bookSearch = app.bookSearch;
+window.searchManager = app.searchManager;
