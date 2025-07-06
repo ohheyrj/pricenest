@@ -37,7 +37,7 @@ def create_item(category_id):
             by_index = name.rfind(" by ")
             if by_index > 0:
                 title = name[:by_index]
-                author = name[by_index + 4:]
+                author = name[by_index + 4 :]
 
         item = Item(
             category_id=category_id,

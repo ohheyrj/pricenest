@@ -53,7 +53,8 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
 
             try:
                 headers = {
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"}
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+                }
                 response = requests.get(url, params=params, headers=headers, timeout=10)
                 api_call_info["status_code"] = response.status_code
 
@@ -286,7 +287,9 @@ def get_apple_pricing(item: Dict) -> Dict[str, Any]:
     currency = item.get("currency", "GBP")
 
     # Debug: Log the currency being used
-    print(f"💰 DEBUG: Movie '{item.get('trackName', 'Unknown')}' - Currency: {currency}")
+    print(
+        f"💰 DEBUG: Movie '{item.get('trackName', 'Unknown')}' - Currency: {currency}"
+    )
 
     # Prioritize purchase prices over rental prices
     hd_purchase_price = item.get("trackHdPrice")

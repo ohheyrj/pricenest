@@ -395,12 +395,15 @@ def preview_csv():
                     INSERT INTO pending_movie_searches (category_id, title, director, year, csv_row_data)
                     VALUES (?, ?, ?, ?, ?)
                 """,
-                    (category_id,
-                     csv_data["title"],
+                    (
+                        category_id,
+                        csv_data["title"],
                         csv_data["director"],
                         csv_data["year"],
-                        requests.utils.quote(f"{csv_data['title']}|{csv_data['director'] or ''}|{csv_data['year'] or ''}"),
-                     ),
+                        requests.utils.quote(
+                            f"{csv_data['title']}|{csv_data['director'] or ''}|{csv_data['year'] or ''}"
+                        ),
+                    ),
                 )
 
         conn.commit()
@@ -586,7 +589,8 @@ def import_confirmed():
                 "message": f'Imported {results["imported"]} movies into "{category_name}" category',
                 "imported_count": results["imported"],
                 "results": results,
-            })
+            }
+        )
 
     except Exception as e:
         print(f"Confirmed import error: {e}")
@@ -999,7 +1003,8 @@ def import_csv():
                 "success": True,
                 "message": f'Imported {results["imported"]} movies into "{category_name}" category',
                 "results": results,
-            })
+            }
+        )
 
     except Exception as e:
         print(f"CSV import error: {e}")
