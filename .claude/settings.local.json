@@ -26,7 +26,9 @@
       "Bash(git checkout:*)",
       "Bash(python:*)",
       "Bash(find:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr checks:*)"
     ],
     "deny": []
   }

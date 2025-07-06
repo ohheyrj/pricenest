@@ -15,7 +15,7 @@ class Config:
     DATABASE_PATH = os.getenv("DATABASE_PATH", "data/price_tracker.db")
 
     # Flask configuration
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
+    SECRET_KEY = os.getenv("SECRET_KEY", "development-only-change-in-production")
     DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
     # Server configuration
