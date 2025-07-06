@@ -26,5 +26,6 @@
     autopep8
     isort
     selenium
+    # Security tools (note: safety and bandit are installed via pip in CI)
   ]);
 }
