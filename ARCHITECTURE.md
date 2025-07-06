@@ -4,13 +4,20 @@ This document describes the modular architecture of the Price Tracker applicatio
 
 ## Overview
 
-The application follows a clean, modular Flask architecture with clear separation of concerns:
+The application follows a clean, modular full-stack architecture with clear separation of concerns:
 
+### Backend (Flask)
 - **Presentation Layer**: Templates and static files
 - **API Layer**: Flask blueprints for different domains
 - **Business Logic**: Services for complex operations
 - **Data Layer**: Database operations and models
 - **Configuration**: Centralized settings management
+
+### Frontend (JavaScript)
+- **Component Layer**: Reusable UI components and widgets
+- **Service Layer**: Business logic and API integration
+- **Build Layer**: Webpack bundling and optimization
+- **Universal Exports**: Cross-environment module compatibility
 
 ## Module Structure
 
@@ -92,10 +99,100 @@ def create_app():
   - Fallback mock results
   - Result sorting and formatting
 
-### Frontend (`src/static/` and `src/templates/`)
-- **Templates**: Jinja2 HTML templates
-- **Static Files**: CSS, JavaScript, images
-- **Structure**: Standard Flask static file organization
+### Frontend JavaScript Modules (`src/static/js/`)
+
+#### Core Application (`app.js`)
+- **Purpose**: Webpack entry point and application coordinator
+- **Responsibilities**:
+  - Module loading in dependency order
+  - Application initialization
+  - Global error handling
+  - Environment detection
+
+#### API Layer (`api-client.js`)
+- **Purpose**: Centralized API communication
+- **Features**:
+  - RESTful endpoint abstraction
+  - Error handling and response formatting
+  - Request/response logging
+  - Universal export compatibility
+
+#### Components (`components/`)
+
+##### `Modal.js`
+- **Purpose**: Modal dialog management system
+- **Features**:
+  - Focus trapping and accessibility
+  - Keyboard navigation (ESC, Tab)
+  - Lifecycle callbacks (onOpen, onClose)
+  - Backdrop click handling
+
+##### `UIComponents.js`
+- **Purpose**: Reusable UI component library
+- **Components**:
+  - Notification system (success/error/info messages)
+  - Loading states and spinners
+  - Card components
+  - Button components with various styles
+  - Form validation helpers
+
+##### `FilterControls.js`
+- **Purpose**: Advanced filtering and search system
+- **Features**:
+  - Real-time search across items
+  - Status filtering (all/pending/purchased)
+  - Sorting options (name, price, date)
+  - View mode toggles (grid/list)
+  - State persistence via localStorage
+
+##### `FormHandler.js`
+- **Purpose**: Form validation and submission handling
+- **Features**:
+  - Client-side validation
+  - Error message display
+  - Success feedback
+  - Form state management
+
+#### Services (`services/`)
+
+##### `BookSearch.js`
+- **Purpose**: Book search integration
+- **APIs**: Google Books, Kobo UK
+- **Features**:
+  - Multi-source search with fallbacks
+  - Price estimation for books without pricing
+  - Category validation
+  - Result formatting and sorting
+
+##### `MovieSearch.js`
+- **Purpose**: Movie search integration
+- **API**: Apple Store
+- **Features**:
+  - Movie metadata retrieval
+  - Director and year information
+  - Category-specific availability
+  - Result formatting
+
+##### `SearchManager.js`
+- **Purpose**: Search UI orchestration
+- **Responsibilities**:
+  - Coordinating between search services
+  - Managing search modals and forms
+  - Handling search result display
+  - Item addition workflows
+
+#### Utilities (`csv-importer.js`)
+- **Purpose**: CSV file processing and import
+- **Features**:
+  - File validation and parsing
+  - Progress tracking with visual feedback
+  - Error handling and reporting
+  - Batch processing with configurable delays
+
+#### Templates (`src/templates/`)
+- **`index.html`**: Main Flask template with individual script tags
+- **`index-webpack.html`**: Webpack build template with bundled scripts
+- **Template Selection**: Automatic based on build mode
 
 ### WSGI Entry Point (`src/wsgi.py`)
 - **Purpose**: Production deployment entry point
@@ -104,19 +201,49 @@ def create_app():
   - WSGI application creation
   - Production-ready configuration
 
+### Build System (`webpack.config.js`)
+
+#### Development Mode
+- **Fast builds**: Optimized for development speed
+- **Source maps**: Full debugging information 
+- **Hot reload**: Live updates during development
+- **No minification**: Readable output for debugging
+
+#### Production Mode
+- **Code splitting**: Separates components, services, and main code
+- **Minification**: Terser plugin for optimized JavaScript
+- **Content hashing**: Cache-busting filenames
+- **Bundle analysis**: Size optimization and analysis
+
+#### Universal Module Exports
+- **CommonJS**: Current Node.js compatibility (`module.exports`)
+- **ES Modules**: Webpack and modern bundler support (`export default`)
+- **AMD**: RequireJS compatibility (`define()`)
+- **Browser Globals**: Direct script tag support (`window.ModuleName`)
+
+#### Package Management
+- **package.json**: Node.js dependencies and build scripts
+- **devenv.nix**: Reproducible development environment
+- **Dependency isolation**: Clear separation of dev/runtime dependencies
+
 ## Design Principles
 
 ### 1. Single Responsibility Principle
 Each module has a single, well-defined purpose:
-- Routes handle HTTP requests/responses
-- Services handle business logic
-- Database layer handles data operations
-- Configuration handles settings
+- **Backend**: Routes handle HTTP requests/responses
+- **Backend**: Services handle business logic
+- **Backend**: Database layer handles data operations
+- **Backend**: Configuration handles settings
+- **Frontend**: Components handle UI interactions
+- **Frontend**: Services handle API communication and business logic
+- **Frontend**: Utilities handle specific tasks (CSV import, etc.)
 
 ### 2. Dependency Injection
-- Database connections are injected where needed
-- Configuration is centralized and imported
-- Services are stateless and easily testable
+- **Backend**: Database connections are injected where needed
+- **Backend**: Configuration is centralized and imported
+- **Backend**: Services are stateless and easily testable
+- **Frontend**: API client is injected into services
+- **Frontend**: Components receive dependencies via constructor parameters
 
 ### 3. Flask Blueprints
 - Logical grouping of related routes
@@ -125,15 +252,29 @@ Each module has a single, well-defined purpose:
 - Clear API organization
 
 ### 4. Separation of Concerns
+
+#### Backend Flow
 ```
-Request → Route → Service → Database → Response
+HTTP Request → Flask Route → Service → Database → HTTP Response
+```
+
+#### Frontend Flow
+```
+User Interaction → Component → Service → API Client → Backend API
+```
+
+#### End-to-End Flow
+```
+UI Event → Frontend Service → API Client → Flask Route → Backend Service → Database → Response → Frontend Update
 ```
 
 ### 5. Testability
-- Each module can be tested independently
-- Clear interfaces between components
-- Easy mocking and dependency injection
-- Modular test structure mirrors code structure
+- **Backend**: Each module can be tested independently
+- **Backend**: Clear interfaces between components
+- **Backend**: Easy mocking and dependency injection
+- **Frontend**: JavaScript modules have comprehensive test coverage
+- **Frontend**: Universal exports enable testing in Node.js environment
+- **Both**: Modular test structure mirrors code structure
 
 ## Benefits of Modular Structure
 
@@ -159,6 +300,7 @@ Request → Route → Service → Database → Response
 
 ## File Size Comparison
 
+### Backend Modules
 | Module | Lines | Purpose |
 |--------|-------|---------|
 | Original app.py | ~500 | Everything |
@@ -171,41 +313,73 @@ Request → Route → Service → Database → Response
 | services/book_search.py | ~130 | Book search logic |
 | config.py | ~50 | Configuration |
 
+### Frontend Modules
+| Module | Lines | Purpose |
+|--------|-------|---------|
+| Original script.js | ~2000+ | Everything |
+| New script.js | ~800 | Main application logic |
+| app.js | ~85 | Webpack entry point |
+| api-client.js | ~350 | API communication |
+| csv-importer.js | ~300 | CSV import functionality |
+| components/Modal.js | ~450 | Modal management |
+| components/UIComponents.js | ~800 | UI component library |
+| components/FilterControls.js | ~400 | Filtering system |
+| components/FormHandler.js | ~200 | Form handling |
+| services/BookSearch.js | ~225 | Book search logic |
+| services/MovieSearch.js | ~195 | Movie search logic |
+| services/SearchManager.js | ~445 | Search orchestration |
+
 ## Testing Structure
 
 The test structure mirrors the code structure:
 
 ```
 tests/
-├── test_api.py              # All API endpoint tests
-├── test_book_search.py      # Book search service tests
-├── test_database.py         # Database operation tests
+├── test_api.py              # Backend API endpoint tests
+├── test_book_search.py      # Backend book search service tests  
+├── test_database.py         # Backend database operation tests
+├── test_search_modules.py   # Frontend search module tests
+├── test_ui_components.py    # Frontend UI component tests
 └── conftest.py             # Shared test configuration
 ```
+
+### Frontend Testing
+- **Node.js Environment**: Tests run in Node.js using the universal exports
+- **Module Isolation**: Each frontend module can be tested independently
+- **Mock Dependencies**: API client and DOM elements are easily mocked
+- **Comprehensive Coverage**: Tests cover both component and service layers
 
 ## Future Extensibility
 
 The modular structure makes it easy to add:
 
-### New API Endpoints
-1. Create new blueprint in `routes/`
-2. Register blueprint in `app.py`
-3. Add corresponding tests
+### Backend Extensions
+1. **New API Endpoints**: Create new blueprint in `routes/`, register in `app.py`
+2. **New Services**: Create service module in `services/`, import in relevant routes
+3. **New Database Support**: Create adapter in `database/`, maintain same interface
 
-### New Services
-1. Create service module in `services/`
-2. Import and use in relevant routes
-3. Add service-specific tests
+### Frontend Extensions
+1. **New Components**: Add to `components/`, export with universal pattern
+2. **New Services**: Add to `services/`, integrate with existing SearchManager
+3. **New Features**: Create focused modules with clear responsibilities
 
-### New Database Support
-1. Create new database adapter in `database/`
-2. Update configuration options
-3. Maintain same interface
+### Build System Extensions
+1. **New Build Targets**: Add configurations to `webpack.config.js`
+2. **New Environments**: Extend `package.json` scripts
+3. **New Bundling Strategies**: Modify webpack settings for specific needs
 
-### New Features
-- Authentication: Add `auth.py` blueprint
-- Caching: Add `cache.py` service
-- Background Tasks: Add `tasks.py` service
-- Admin Interface: Add `admin.py` blueprint
+### Potential New Features
+- **Authentication**: Add `auth.py` backend blueprint + `auth.js` frontend service
+- **Caching**: Add `cache.py` backend service + browser caching in frontend
+- **Background Tasks**: Add `tasks.py` backend service + progress tracking components
+- **Admin Interface**: Add `admin.py` blueprint + admin UI components
+- **Mobile App**: Reuse frontend services with React Native or similar
+- **Browser Extension**: Package components for browser extension environment
 
-This architecture provides a solid foundation for growth while maintaining code quality and developer productivity.
+### Benefits of Universal Architecture
+- **Code Reuse**: Frontend modules work in any JavaScript environment
+- **Testing**: Comprehensive testing across all environments
+- **Deployment**: Flexible deployment options (bundled, individual scripts, etc.)
+- **Development**: Smooth transition between development modes
+
+This architecture provides a solid foundation for growth while maintaining code quality and developer productivity across both backend and frontend systems.
