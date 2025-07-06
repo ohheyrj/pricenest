@@ -243,13 +243,6 @@ class TestPriceHistoryModel:
     def test_price_history_to_dict(self, sqlalchemy_app, db_session):
         """Test price history to_dict method."""
         with sqlalchemy_app.app_context():
-            category = Category(name="Test Category", type="books")
-            item = Item(
-                category_id=1,  # Will be created in test data
-                name="Test Item",
-                url="https://example.com/test",
-                price=10.99,
-            )
 
             price_history = PriceHistory(
                 item_id=1,  # Will reference existing test item

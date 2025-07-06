@@ -248,7 +248,6 @@ def preview_csv():
             csv_reader = csv.DictReader(io.StringIO(file_content))
 
             # Validate CSV headers
-            required_headers = ["title"]
             headers = csv_reader.fieldnames
             if not headers or "title" not in headers:
                 return (
@@ -687,7 +686,7 @@ def process_pending():
 
                 elif search_results.get("rate_limited"):
                     # Still rate limited - stop processing
-                    print(f"🚦 Still rate limited, stopping batch processing")
+                    print("🚦 Still rate limited, stopping batch processing")
                     break
 
                 elif retry_count >= 3:
@@ -873,7 +872,6 @@ def import_csv():
             csv_reader = csv.DictReader(io.StringIO(file_content))
 
             # Validate CSV headers
-            required_headers = ["title"]
             headers = csv_reader.fieldnames
             if not headers or "title" not in headers:
                 return (

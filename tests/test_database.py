@@ -143,7 +143,7 @@ class TestDatabaseOperations:
         assert category["id"] == 1
         assert category["name"] == "Electronics"
         assert category["type"] == "general"  # Default type
-        assert category["bookLookupEnabled"] == False
+        assert category["bookLookupEnabled"] is False
         assert category["bookLookupSource"] == "auto"
 
     def test_database_foreign_key_constraint(self):

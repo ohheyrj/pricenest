@@ -248,7 +248,7 @@ class TestItemsAPI:
 
         data = json.loads(response.data)
         # Item should now be unbought
-        assert data["bought"] == False
+        assert data["bought"] is False
 
     def test_toggle_nonexistent_item_bought(self, client):
         """Test toggling bought status for an item that doesn't exist."""

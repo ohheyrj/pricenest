@@ -24,7 +24,15 @@ from tests.test_sqlalchemy_api import (
 from tests.test_migration import TestMigration
 
 # Import fixtures
-from tests.conftest_sqlalchemy import *
+from tests.conftest_sqlalchemy import (
+    sqlalchemy_app,
+    sqlalchemy_client,
+    db_session,
+    create_test_data,
+    sample_category,
+    sample_item,
+    sample_movie_item,
+)
 
 
 if __name__ == "__main__":

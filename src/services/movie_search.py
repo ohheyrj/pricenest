@@ -3,7 +3,7 @@ Movie search service for integrating with Apple Store and other APIs.
 """
 
 import requests
-from typing import Dict, List, Any
+from typing import Dict, Any
 import re
 
 
@@ -67,10 +67,10 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
                     # If we hit rate limiting (403), stop trying and return rate limit
                     # info
                     if response.status_code == 403:
-                        print(f"🚦 DEBUG: Rate limit detected, marking as pending")
+                        print("🚦 DEBUG: Rate limit detected, marking as pending")
                         return {
                             "movies": [],
-                            "error": f"Rate limited by Apple Store API (20 calls/minute limit)",
+                            "error": "Rate limited by Apple Store API (20 calls/minute limit)",
                             "rate_limited": True,
                             "debug": debug_info,
                         }
@@ -90,7 +90,7 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
 
             except requests.exceptions.Timeout:
                 api_call_info["error"] = "Timeout"
-                print(f"⏱️ DEBUG: Request timeout")
+                print("⏱️ DEBUG: Request timeout")
             except requests.exceptions.RequestException as e:
                 api_call_info["error"] = str(e)
                 print(f"🚫 DEBUG: Request error: {e}")
@@ -332,7 +332,6 @@ def generate_estimated_movie_price(item: Dict) -> float:
     """Generate estimated movie pricing."""
     # Base pricing for movies
     base_rental = 3.49
-    base_purchase = 9.99
 
     # Adjust based on release date (newer movies cost more)
     year = extract_year_from_release_date(item.get("releaseDate", ""))
@@ -340,10 +339,8 @@ def generate_estimated_movie_price(item: Dict) -> float:
 
     if year and year >= current_year - 1:  # Very recent
         base_rental = 4.99
-        base_purchase = 13.99
     elif year and year >= current_year - 3:  # Recent
         base_rental = 3.99
-        base_purchase = 11.99
 
     # Return rental price as it's more common
     import random
