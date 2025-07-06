@@ -110,7 +110,7 @@ class TestDatabaseOperations:
         assert category["id"] == 1
         assert category["name"] == "Test Books"
         assert category["type"] == "books"
-        assert category["bookLookupEnabled"] == True
+        assert category["bookLookupEnabled"]
         assert category["bookLookupSource"] == "auto"
         assert category["items"] == []
 

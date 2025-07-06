@@ -37,7 +37,7 @@ def create_item(category_id):
             by_index = name.rfind(" by ")
             if by_index > 0:
                 title = name[:by_index]
-                author = name[by_index + 4 :]
+                author = name[by_index + 4:]
 
         item = Item(
             category_id=category_id,
@@ -57,7 +57,7 @@ def create_item(category_id):
 
         return jsonify(item.to_dict()), 201
 
-    except ValueError as e:
+    except ValueError:
         return jsonify({"error": "Invalid price format"}), 400
     except Exception as e:
         print(f"Error creating item: {e}")
@@ -98,7 +98,7 @@ def update_item(item_id):
         # Return updated item
         return jsonify(item.to_dict())
 
-    except ValueError as e:
+    except ValueError:
         return jsonify({"error": "Invalid price format"}), 400
     except Exception as e:
         print(f"Error updating item: {e}")

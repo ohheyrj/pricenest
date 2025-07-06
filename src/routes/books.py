@@ -13,7 +13,6 @@ def search_books():
     """Search for books."""
     try:
         query = request.args.get("query")
-        source = request.args.get("source", "auto")
 
         if not query:
             return jsonify({"error": "Search query is required"}), 400

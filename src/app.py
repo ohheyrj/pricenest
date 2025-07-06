@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Price Tracker Flask Application
-A clean, organized web application for tracking item prices with book search functionality.
+A clean, organized web application for tracking item prices with book search
+functionality.
 """
 
 from flask import Flask

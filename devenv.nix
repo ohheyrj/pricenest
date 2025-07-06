@@ -23,6 +23,8 @@
     pytest-cov
     black
     flake8
+    autopep8
+    isort
     selenium
   ]);
 }

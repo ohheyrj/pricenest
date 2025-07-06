@@ -240,7 +240,7 @@ class TestItemsAPI:
 
         data = json.loads(response.data)
         # Item should now be bought (was False initially)
-        assert data["bought"] == True
+        assert data["bought"]
 
         # Toggle again
         response = client.patch("/api/items/1/bought")

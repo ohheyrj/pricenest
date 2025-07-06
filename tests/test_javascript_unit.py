@@ -51,7 +51,7 @@ class TestJavaScriptFunctions:
                 return '#' + route;
             }
         }
-        
+
         // Test cases
         const tests = [
             { input: '', expected: '#' },
@@ -59,7 +59,7 @@ class TestJavaScriptFunctions:
             { input: '/category/Books', expected: '#/category/Books' },
             { input: '/category/Movies & TV', expected: '#/category/Movies & TV' }
         ];
-        
+
         let passed = 0;
         tests.forEach(test => {
             const result = navigateTo(test.input);
@@ -69,7 +69,7 @@ class TestJavaScriptFunctions:
                 console.error(`FAIL: navigateTo('${test.input}') = '${result}', expected '${test.expected}'`);
             }
         });
-        
+
         console.log(`${passed}/${tests.length} tests passed`);
         """
 
@@ -87,19 +87,19 @@ class TestJavaScriptFunctions:
             'Café Items',
             '50% Off Deals'
         ];
-        
+
         let passed = 0;
         testCases.forEach(name => {
             const encoded = encodeURIComponent(name);
             const decoded = decodeURIComponent(encoded);
-            
+
             if (decoded === name) {
                 passed++;
             } else {
                 console.error(`FAIL: '${name}' -> '${encoded}' -> '${decoded}'`);
             }
         });
-        
+
         console.log(`${passed}/${testCases.length} encoding tests passed`);
         """
 
@@ -111,21 +111,21 @@ class TestJavaScriptFunctions:
         js_code = """
         // Mock view mode state
         let currentViewMode = 'grid';
-        
+
         function toggleItemView(view) {
             currentViewMode = view;
             return currentViewMode;
         }
-        
+
         // Test toggling
         console.log('Initial:', currentViewMode);
-        
+
         toggleItemView('list');
         console.log('After list toggle:', currentViewMode);
-        
+
         toggleItemView('grid');
         console.log('After grid toggle:', currentViewMode);
-        
+
         // Test that invalid values are handled
         toggleItemView('invalid');
         console.log('After invalid toggle:', currentViewMode);
@@ -153,15 +153,15 @@ class TestURLRouting:
             if (!hash || hash === '#') {
                 return { type: 'main' };
             }
-            
+
             if (hash.startsWith('#/category/')) {
                 const categoryName = decodeURIComponent(hash.replace('#/category/', ''));
                 return { type: 'category', name: categoryName };
             }
-            
+
             return { type: 'unknown' };
         }
-        
+
         // Test cases
         const tests = [
             { hash: '', expected: { type: 'main' } },
@@ -170,19 +170,19 @@ class TestURLRouting:
             { hash: '#/category/Movies%20%26%20TV', expected: { type: 'category', name: 'Movies & TV' } },
             { hash: '#/unknown/route', expected: { type: 'unknown' } }
         ];
-        
+
         let passed = 0;
         tests.forEach(test => {
             const result = parseHash(test.hash);
             const match = JSON.stringify(result) === JSON.stringify(test.expected);
-            
+
             if (match) {
                 passed++;
             } else {
                 console.error(`FAIL: parseHash('${test.hash}') =`, JSON.stringify(result));
             }
         });
-        
+
         console.log(`${passed}/${tests.length} hash parsing tests passed`);
         """
 

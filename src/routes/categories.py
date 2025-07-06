@@ -3,7 +3,7 @@ Category management routes using SQLAlchemy.
 """
 
 from flask import Blueprint, request, jsonify
-from src.models.database import db, Category, Item
+from src.models.database import db, Category
 
 categories_bp = Blueprint("categories", __name__)
 

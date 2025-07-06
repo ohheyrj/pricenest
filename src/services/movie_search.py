@@ -53,8 +53,7 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
 
             try:
                 headers = {
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
-                }
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"}
                 response = requests.get(url, params=params, headers=headers, timeout=10)
                 api_call_info["status_code"] = response.status_code
 
@@ -65,7 +64,8 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
                     print(f"❌ DEBUG: HTTP Error {response.status_code}")
                     debug_info["api_calls"].append(api_call_info)
 
-                    # If we hit rate limiting (403), stop trying and return rate limit info
+                    # If we hit rate limiting (403), stop trying and return rate limit
+                    # info
                     if response.status_code == 403:
                         print(f"🚦 DEBUG: Rate limit detected, marking as pending")
                         return {
@@ -151,7 +151,8 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
             }
             movies.append(movie)
 
-        # Sort movies: HD purchase first, then standard purchase, collection, rental, then by price
+        # Sort movies: HD purchase first, then standard purchase, collection,
+        # rental, then by price
         def get_price_priority(price_source):
             if "hd_purchase" in price_source:
                 return 0  # Highest priority

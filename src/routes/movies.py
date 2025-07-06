@@ -37,9 +37,9 @@ def check_for_duplicate_item(
                 cursor.execute(
                     """
                     SELECT id, name, title, director, year, url, price
-                    FROM items 
-                    WHERE category_id = ? 
-                      AND LOWER(TRIM(title)) = ? 
+                    FROM items
+                    WHERE category_id = ?
+                      AND LOWER(TRIM(title)) = ?
                       AND year = ?
                 """,
                     (category_id, title_norm, year),
@@ -62,9 +62,9 @@ def check_for_duplicate_item(
                 cursor.execute(
                     """
                     SELECT id, name, title, director, year, url, price
-                    FROM items 
-                    WHERE category_id = ? 
-                      AND LOWER(TRIM(title)) = ? 
+                    FROM items
+                    WHERE category_id = ?
+                      AND LOWER(TRIM(title)) = ?
                       AND LOWER(TRIM(director)) = ?
                 """,
                     (category_id, title_norm, director_norm),
@@ -86,8 +86,8 @@ def check_for_duplicate_item(
             cursor.execute(
                 """
                 SELECT id, name, title, director, year, url, price
-                FROM items 
-                WHERE category_id = ? 
+                FROM items
+                WHERE category_id = ?
                   AND LOWER(TRIM(title)) = ?
             """,
                 (category_id, title_norm),
@@ -111,9 +111,9 @@ def check_for_duplicate_item(
                 cursor.execute(
                     """
                     SELECT id, name, title, author, url, price
-                    FROM items 
-                    WHERE category_id = ? 
-                      AND LOWER(TRIM(title)) = ? 
+                    FROM items
+                    WHERE category_id = ?
+                      AND LOWER(TRIM(title)) = ?
                       AND LOWER(TRIM(author)) = ?
                 """,
                     (category_id, title_norm, author_norm),
@@ -134,8 +134,8 @@ def check_for_duplicate_item(
             cursor.execute(
                 """
                 SELECT id, name, title, author, url, price
-                FROM items 
-                WHERE category_id = ? 
+                FROM items
+                WHERE category_id = ?
                   AND LOWER(TRIM(title)) = ?
             """,
                 (category_id, title_norm),
@@ -157,8 +157,8 @@ def check_for_duplicate_item(
             cursor.execute(
                 """
                 SELECT id, name, url, price
-                FROM items 
-                WHERE category_id = ? 
+                FROM items
+                WHERE category_id = ?
                   AND LOWER(TRIM(name)) = ?
             """,
                 (category_id, title_norm),
@@ -396,15 +396,12 @@ def preview_csv():
                     INSERT INTO pending_movie_searches (category_id, title, director, year, csv_row_data)
                     VALUES (?, ?, ?, ?, ?)
                 """,
-                    (
-                        category_id,
-                        csv_data["title"],
+                    (category_id,
+                     csv_data["title"],
                         csv_data["director"],
                         csv_data["year"],
-                        requests.utils.quote(
-                            f"{csv_data['title']}|{csv_data['director'] or ''}|{csv_data['year'] or ''}"
-                        ),
-                    ),
+                        requests.utils.quote(f"{csv_data['title']}|{csv_data['director'] or ''}|{csv_data['year'] or ''}"),
+                     ),
                 )
 
         conn.commit()
@@ -590,8 +587,7 @@ def import_confirmed():
                 "message": f'Imported {results["imported"]} movies into "{category_name}" category',
                 "imported_count": results["imported"],
                 "results": results,
-            }
-        )
+            })
 
     except Exception as e:
         print(f"Confirmed import error: {e}")
@@ -609,9 +605,9 @@ def process_pending():
         cursor.execute(
             """
             SELECT id, category_id, title, director, year, csv_row_data, retry_count
-            FROM pending_movie_searches 
-            WHERE status = 'pending' 
-            ORDER BY created_at ASC 
+            FROM pending_movie_searches
+            WHERE status = 'pending'
+            ORDER BY created_at ASC
             LIMIT 5
         """
         )
@@ -642,7 +638,7 @@ def process_pending():
                 # Update last_attempted and increment retry count
                 cursor.execute(
                     """
-                    UPDATE pending_movie_searches 
+                    UPDATE pending_movie_searches
                     SET last_attempted = CURRENT_TIMESTAMP, retry_count = retry_count + 1
                     WHERE id = ?
                 """,
@@ -679,7 +675,7 @@ def process_pending():
                     # Mark as completed
                     cursor.execute(
                         """
-                        UPDATE pending_movie_searches 
+                        UPDATE pending_movie_searches
                         SET status = 'completed'
                         WHERE id = ?
                     """,
@@ -698,7 +694,7 @@ def process_pending():
                     # Max retries reached - mark as failed
                     cursor.execute(
                         """
-                        UPDATE pending_movie_searches 
+                        UPDATE pending_movie_searches
                         SET status = 'failed'
                         WHERE id = ?
                     """,
@@ -1005,8 +1001,7 @@ def import_csv():
                 "success": True,
                 "message": f'Imported {results["imported"]} movies into "{category_name}" category',
                 "results": results,
-            }
-        )
+            })
 
     except Exception as e:
         print(f"CSV import error: {e}")
