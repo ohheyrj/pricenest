@@ -117,32 +117,30 @@ class PriceNest {
     async checkForMigration() {
         const localData = this.loadFromStorage();
         if (localData && localData.length > 0 && this.categories.length === 0) {
-            if (confirm('Found existing data in browser storage. Would you like to migrate it to the database?')) {
+            const confirmed = await UIComponents.Confirmation.show({
+                title: 'Data Migration',
+                message: 'Found existing data in browser storage. Would you like to migrate it to the database?',
+                confirmText: 'Migrate',
+                cancelText: 'Skip',
+                type: 'info'
+            });
+            
+            if (confirmed) {
                 try {
                     await this.api.migrateData(localData);
                     localStorage.removeItem('priceNestData');
                     await this.loadData();
-                    alert('Data migrated successfully!');
+                    this.showSuccess('Data migrated successfully!');
                 } catch (error) {
                     console.error('Migration failed:', error);
-                    alert('Failed to migrate data. You can continue using the app with empty database.');
+                    this.showError('Failed to migrate data. You can continue using the app with empty database.');
                 }
             }
         }
     }
 
     showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-error';
-        errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; z-index: 1001;';
-        errorDiv.textContent = message;
-        document.body.appendChild(errorDiv);
-        
-        setTimeout(() => {
-            if (errorDiv.parentNode) {
-                errorDiv.parentNode.removeChild(errorDiv);
-            }
-        }, 5000);
+        UIComponents.Notification.showError(message);
     }
     
     initializeElements() {
@@ -294,38 +292,7 @@ class PriceNest {
     }
     
     showBookLookupSuggestion() {
-        const existingNotification = document.querySelector('.book-suggestion-notification');
-        if (existingNotification) {
-            existingNotification.remove();
-        }
-        
-        const notification = document.createElement('div');
-        notification.className = 'book-suggestion-notification';
-        notification.style.cssText = `
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            border: 1px solid #bbdefb;
-            margin-top: 4px;
-            z-index: 1000;
-        `;
-        notification.innerHTML = '<i class="fas fa-lightbulb"></i> Book lookup enabled automatically for this category';
-        
-        const categoryNameContainer = this.categoryNameInput.parentElement;
-        categoryNameContainer.style.position = 'relative';
-        categoryNameContainer.appendChild(notification);
-        
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 3000);
+        UIComponents.Notification.showInfo('Book lookup enabled automatically for this category', 3000);
     }
     
     closeCategoryModal() {
@@ -509,9 +476,14 @@ class PriceNest {
     }
     
     async deleteCategory(categoryIndex) {
-        if (confirm('Are you sure you want to delete this category and all its items?')) {
+        const category = this.categories[categoryIndex];
+        const confirmed = await UIComponents.Confirmation.showDestructive(
+            'Are you sure you want to delete this category and all its items?',
+            category.name
+        );
+        
+        if (confirmed) {
             try {
-                const category = this.categories[categoryIndex];
                 await this.api.deleteCategory(category.id);
                 this.categories.splice(categoryIndex, 1);
                 this.render();
@@ -523,9 +495,14 @@ class PriceNest {
     }
     
     async deleteItem(categoryIndex, itemIndex) {
-        if (confirm('Are you sure you want to delete this item?')) {
+        const item = this.categories[categoryIndex].items[itemIndex];
+        const confirmed = await UIComponents.Confirmation.showDestructive(
+            'Are you sure you want to delete this item?',
+            item.name
+        );
+        
+        if (confirmed) {
             try {
-                const item = this.categories[categoryIndex].items[itemIndex];
                 await this.api.deleteItem(item.id);
                 this.categories[categoryIndex].items.splice(itemIndex, 1);
                 this.render();
@@ -747,17 +724,7 @@ class PriceNest {
     }
 
     showSuccess(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'alert alert-success';
-        successDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; z-index: 1001;';
-        successDiv.textContent = message;
-        document.body.appendChild(successDiv);
-        
-        setTimeout(() => {
-            if (successDiv.parentNode) {
-                successDiv.parentNode.removeChild(successDiv);
-            }
-        }, 3000);
+        UIComponents.Notification.showSuccess(message);
     }
     
     closeKoboModal() {
@@ -813,11 +780,9 @@ class PriceNest {
 
     async processPendingMovies() {
         const btn = document.getElementById('process-pending-btn');
-        const originalText = btn.innerHTML;
         
         try {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            UIComponents.Loading.setButtonLoading(btn, 'Processing...');
             
             const result = await this.api.processPendingMovies();
             
@@ -832,8 +797,7 @@ class PriceNest {
             console.error('Process pending error:', error);
             this.showError('Failed to process pending movies: ' + error.message);
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            UIComponents.Loading.clearButtonLoading(btn);
         }
     }
     
@@ -882,7 +846,7 @@ class PriceNest {
     }
     
     displaySearchResults(container, results, isInItemModal) {
-        container.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+        UIComponents.Loading.showInlineSpinner(container, 'Searching...');
         
         setTimeout(() => {
             if (results.error) {
@@ -891,7 +855,8 @@ class PriceNest {
             }
             
             if (!results.books || results.books.length === 0) {
-                container.innerHTML = '<div class="search-error">No books found. Try a different search term.</div>';
+                const emptyState = UIComponents.EmptyState.createNoResultsState('books');
+                container.innerHTML = emptyState.outerHTML;
                 return;
             }
             
@@ -901,7 +866,7 @@ class PriceNest {
     }
     
     displayMovieSearchResults(container, results, isInItemModal) {
-        container.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+        UIComponents.Loading.showInlineSpinner(container, 'Searching...');
         
         setTimeout(() => {
             if (results.error) {
@@ -910,7 +875,8 @@ class PriceNest {
             }
             
             if (!results.movies || results.movies.length === 0) {
-                container.innerHTML = '<div class="search-error">No movies found. Try a different search term.</div>';
+                const emptyState = UIComponents.EmptyState.createNoResultsState('movies');
+                container.innerHTML = emptyState.outerHTML;
                 return;
             }
             
@@ -1021,7 +987,15 @@ class PriceNest {
             return;
         }
         
-        if (!confirm(`Refresh prices for ${refreshableItems.length} items? This may take a few minutes.`)) {
+        const confirmed = await UIComponents.Confirmation.show({
+            title: 'Refresh Prices',
+            message: `Refresh prices for ${refreshableItems.length} items? This may take a few minutes.`,
+            confirmText: 'Refresh',
+            cancelText: 'Cancel',
+            type: 'info'
+        });
+        
+        if (!confirmed) {
             return;
         }
         
@@ -1251,7 +1225,7 @@ class PriceNest {
                 </div>
                 
                 <div class="category-items ${this.currentViewMode}-view" id="category-items-container">
-                    ${category.items.length > 0 ? this.createItemsSection(category, categoryIndex) : '<div class="empty-state"><p>No items yet. Click "Add Item" to get started!</p></div>'}
+                    ${category.items.length > 0 ? this.createItemsSection(category, categoryIndex) : this.createEmptyItemsState(categoryIndex)}
                 </div>
             </div>
         `;
@@ -1260,6 +1234,13 @@ class PriceNest {
     backToCategories() {
         // Update URL to go back to main view
         this.navigateTo('');
+    }
+    
+    createEmptyItemsState(categoryIndex) {
+        const emptyState = UIComponents.EmptyState.createEmptyItemsState(() => {
+            this.openItemModal(categoryIndex);
+        });
+        return emptyState.outerHTML;
     }
     
     toggleItemView(view) {
@@ -1291,13 +1272,20 @@ class PriceNest {
     
     createItemsSection(category, categoryIndex) {
         if (category.items.length === 0) {
-            return `
-                <div class="empty-state">
-                    <i class="fas fa-shopping-cart"></i>
-                    <h4>No items in this category</h4>
-                    <p>Add your first item to start tracking!</p>
-                </div>
-            `;
+            const emptyState = UIComponents.EmptyState.create({
+                icon: 'fas fa-shopping-cart',
+                title: 'No items in this category',
+                message: 'Add your first item to start tracking!',
+                actions: [
+                    {
+                        text: 'Add Item',
+                        icon: 'fas fa-plus',
+                        className: 'btn-primary',
+                        onClick: () => this.openItemModal(categoryIndex)
+                    }
+                ]
+            });
+            return emptyState.outerHTML;
         }
         
         const itemsHtml = category.items.map((item, itemIndex) => 
