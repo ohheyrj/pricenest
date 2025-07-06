@@ -8,17 +8,17 @@ import pytest
 # Import all test classes
 from tests.test_sqlalchemy_models import (
     TestCategoryModel,
-    TestItemModel, 
+    TestItemModel,
     TestPriceHistoryModel,
     TestPendingMovieSearchModel,
-    TestModelQueries
+    TestModelQueries,
 )
 
 from tests.test_sqlalchemy_api import (
     TestCategoriesAPI,
     TestItemsAPI,
     TestPriceHistoryAPI,
-    TestDatabaseIntegration
+    TestDatabaseIntegration,
 )
 
 from tests.test_migration import TestMigration
@@ -27,6 +27,6 @@ from tests.test_migration import TestMigration
 from tests.conftest_sqlalchemy import *
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run all SQLAlchemy tests
-    pytest.main([__file__, '-v'])
+    pytest.main([__file__, "-v"])

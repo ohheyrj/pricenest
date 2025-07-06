@@ -13,35 +13,33 @@ import tempfile
 @pytest.fixture
 def js_test_runner():
     """Create a temporary JS file to run tests."""
+
     def runner(js_code):
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
             # Write test code
             f.write(js_code)
             f.flush()
-            
+
             try:
                 # Run with Node.js
                 result = subprocess.run(
-                    ['node', f.name],
-                    capture_output=True,
-                    text=True,
-                    timeout=5
+                    ["node", f.name], capture_output=True, text=True, timeout=5
                 )
-                
+
                 if result.returncode != 0:
                     raise Exception(f"JavaScript error: {result.stderr}")
-                
+
                 return result.stdout.strip()
             finally:
                 # Clean up
                 os.unlink(f.name)
-    
+
     return runner
 
 
 class TestMovieSearch:
     """Test MovieSearch module functionality"""
-    
+
     def test_movie_search_instantiation(self, js_test_runner):
         """Test MovieSearch class can be instantiated."""
         js_code = """
@@ -83,11 +81,11 @@ class TestMovieSearch:
         console.log('MovieSearch instantiated successfully');
         console.log('API client set:', movieSearch.api === mockAPIClient);
         """
-        
+
         output = js_test_runner(js_code)
         assert "MovieSearch instantiated successfully" in output
         assert "API client set: true" in output
-    
+
     def test_movie_category_availability(self, js_test_runner):
         """Test movie search availability for different categories."""
         js_code = """
@@ -119,10 +117,10 @@ class TestMovieSearch:
         
         console.log(`${passed}/${tests.length} category availability tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "4/4 category availability tests passed" in output
-    
+
     def test_movie_price_formatting(self, js_test_runner):
         """Test movie price formatting with different currencies."""
         js_code = """
@@ -162,14 +160,14 @@ class TestMovieSearch:
         
         console.log(`${passed}/${tests.length} price formatting tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "6/6 price formatting tests passed" in output
 
 
 class TestBookSearch:
     """Test BookSearch module functionality"""
-    
+
     def test_book_search_instantiation(self, js_test_runner):
         """Test BookSearch class can be instantiated."""
         js_code = """
@@ -198,11 +196,11 @@ class TestBookSearch:
         console.log('BookSearch instantiated successfully');
         console.log('API client set:', bookSearch.api === mockAPIClient);
         """
-        
+
         output = js_test_runner(js_code)
         assert "BookSearch instantiated successfully" in output
         assert "API client set: true" in output
-    
+
     def test_book_category_availability(self, js_test_runner):
         """Test book search availability for different categories."""
         js_code = """
@@ -232,10 +230,10 @@ class TestBookSearch:
         
         console.log(`${passed}/${tests.length} book category availability tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "2/2 book category availability tests passed" in output
-    
+
     def test_book_search_sources(self, js_test_runner):
         """Test available book search sources."""
         js_code = """
@@ -257,13 +255,13 @@ class TestBookSearch:
         console.log('Has google_books source:', sources.some(s => s.value === 'google_books'));
         console.log('Has kobo source:', sources.some(s => s.value === 'kobo'));
         """
-        
+
         output = js_test_runner(js_code)
         assert "Number of sources: 3" in output
         assert "Has auto source: true" in output
         assert "Has google_books source: true" in output
         assert "Has kobo source: true" in output
-    
+
     def test_book_configuration_validation(self, js_test_runner):
         """Test book search configuration validation."""
         js_code = """
@@ -339,14 +337,14 @@ class TestBookSearch:
         
         console.log(`${passed}/${tests.length} configuration validation tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "6/6 configuration validation tests passed" in output
 
 
 class TestSearchManager:
     """Test SearchManager module functionality"""
-    
+
     def test_search_manager_instantiation(self, js_test_runner):
         """Test SearchManager class can be instantiated with dependencies."""
         js_code = """
@@ -397,12 +395,12 @@ class TestSearchManager:
         console.log('Has movie search:', searchManager.movieSearch === mockMovieSearch);
         console.log('Has book search:', searchManager.bookSearch === mockBookSearch);
         """
-        
+
         output = js_test_runner(js_code)
         assert "SearchManager instantiated successfully" in output
         assert "Has movie search: true" in output
         assert "Has book search: true" in output
-    
+
     def test_search_availability_detection(self, js_test_runner):
         """Test search availability detection for different categories."""
         js_code = """
@@ -467,14 +465,14 @@ class TestSearchManager:
         
         console.log(`${passed}/${tests.length} search availability tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "2/2 search availability tests passed" in output
 
 
 class TestModuleIntegration:
     """Test integration between search modules"""
-    
+
     def test_price_source_indicators(self, js_test_runner):
         """Test price source indicator generation."""
         js_code = """
@@ -517,6 +515,6 @@ class TestModuleIntegration:
         
         console.log(`${passed}/${tests.length} price source indicator tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "5/5 price source indicator tests passed" in output

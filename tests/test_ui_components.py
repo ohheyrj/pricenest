@@ -13,35 +13,33 @@ import tempfile
 @pytest.fixture
 def js_test_runner():
     """Create a temporary JS file to run tests."""
+
     def runner(js_code):
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
             # Write test code
             f.write(js_code)
             f.flush()
-            
+
             try:
                 # Run with Node.js
                 result = subprocess.run(
-                    ['node', f.name],
-                    capture_output=True,
-                    text=True,
-                    timeout=5
+                    ["node", f.name], capture_output=True, text=True, timeout=5
                 )
-                
+
                 if result.returncode != 0:
                     raise Exception(f"JavaScript error: {result.stderr}")
-                
+
                 return result.stdout.strip()
             finally:
                 # Clean up
                 os.unlink(f.name)
-    
+
     return runner
 
 
 class TestModal:
     """Test Modal component functionality"""
-    
+
     def test_modal_configuration(self, js_test_runner):
         """Test Modal configuration and initialization."""
         js_code = """
@@ -140,7 +138,7 @@ class TestModal:
         modal.toggle();
         console.log('Toggle to close:', !modal.isOpen);
         """
-        
+
         output = js_test_runner(js_code)
         assert "Modal created successfully: true" in output
         assert "Initial state closed: true" in output
@@ -155,7 +153,7 @@ class TestModal:
 
 class TestFilterControls:
     """Test FilterControls component functionality"""
-    
+
     def test_filter_state_management(self, js_test_runner):
         """Test FilterControls state management."""
         js_code = """
@@ -275,7 +273,7 @@ class TestFilterControls:
         console.log('Correct filtering:', 
             filteredItems.length === 1 && filteredItems[0].name === 'New Search Item');
         """
-        
+
         output = js_test_runner(js_code)
         assert "Initial search state: true" in output
         assert "Initial status state: true" in output
@@ -284,7 +282,7 @@ class TestFilterControls:
         assert "Active filters count: true" in output
         assert "Filtered items count: true" in output
         assert "Correct filtering: true" in output
-    
+
     def test_filter_sorting(self, js_test_runner):
         """Test FilterControls sorting functionality."""
         js_code = """
@@ -343,7 +341,7 @@ class TestFilterControls:
             sortedDefault[0].name === 'Zebra Item' && 
             sortedDefault[2].name === 'Beta Item');
         """
-        
+
         output = js_test_runner(js_code)
         assert "Name sort correct: true" in output
         assert "Price low sort correct: true" in output
@@ -353,7 +351,7 @@ class TestFilterControls:
 
 class TestUIComponents:
     """Test UIComponents functionality"""
-    
+
     def test_notification_component(self, js_test_runner):
         """Test NotificationComponent functionality."""
         js_code = """
@@ -419,13 +417,13 @@ class TestUIComponents:
         NotificationComponent.clearAll();
         console.log('Notifications cleared:', NotificationComponent.currentNotifications.size === 0);
         """
-        
+
         output = js_test_runner(js_code)
         assert "Success notification created: true" in output
         assert "Error notification created: true" in output
         assert "Notifications tracked: true" in output
         assert "Notifications cleared: true" in output
-    
+
     def test_loading_component(self, js_test_runner):
         """Test LoadingComponent functionality."""
         js_code = """
@@ -490,13 +488,13 @@ class TestUIComponents:
             progressBar.innerHTML.includes('progress: 75%') &&
             progressBar.innerHTML.includes('Almost done...'));
         """
-        
+
         output = js_test_runner(js_code)
         assert "Button loading set: true" in output
         assert "Button loading cleared: true" in output
         assert "Progress bar created: true" in output
         assert "Progress bar updated: true" in output
-    
+
     def test_card_component(self, js_test_runner):
         """Test CardComponent functionality."""
         js_code = """
@@ -556,7 +554,7 @@ class TestUIComponents:
         const usdPriceDisplay = CardComponent.createPriceDisplay(15.50, 'USD');
         console.log('USD price formatted correctly:', usdPriceDisplay.innerHTML.includes('$15.50'));
         """
-        
+
         output = js_test_runner(js_code)
         assert "Card created with correct class: true" in output
         assert "Card has title: true" in output
@@ -569,7 +567,7 @@ class TestUIComponents:
 
 class TestFormHandler:
     """Test FormHandler functionality"""
-    
+
     def test_form_validation(self, js_test_runner):
         """Test FormHandler validation functionality."""
         js_code = """
@@ -667,7 +665,7 @@ class TestFormHandler:
         const numberValid = FormHandler.validateField(numberField, '25');
         console.log('Number field validation passes for number:', numberValid.length === 0);
         """
-        
+
         output = js_test_runner(js_code)
         assert "Valid email passes: true" in output
         assert "Invalid email fails: true" in output
@@ -684,7 +682,7 @@ class TestFormHandler:
 
 class TestComponentIntegration:
     """Test integration between UI components"""
-    
+
     def test_component_interaction(self, js_test_runner):
         """Test how components work together."""
         js_code = """
@@ -775,7 +773,7 @@ class TestComponentIntegration:
         console.log('Final state - notifications:', manager.notifications.length === 3); // info + success + initial
         console.log('Final state - modal closed:', !manager.modals.get('process-modal').isOpen);
         """
-        
+
         output = js_test_runner(js_code)
         assert "Notification created: true" in output
         assert "Modal created: true" in output

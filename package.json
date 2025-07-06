@@ -9,7 +9,11 @@
     "watch": "webpack --watch --mode development",
     "serve": "webpack serve --mode development --open",
     "clean": "rm -rf dist",
-    "analyze": "webpack-bundle-analyzer dist/stats.json"
+    "analyze": "webpack-bundle-analyzer dist/stats.json",
+    "lint": "eslint src/static/js/ --ext .js",
+    "lint:fix": "eslint src/static/js/ --ext .js --fix",
+    "test:frontend": "python -m pytest tests/test_search_modules.py tests/test_ui_components.py -v",
+    "ci": "npm run lint && npm run build && npm run test:frontend"
   },
   "keywords": ["price-tracking", "web-app"],
   "author": "",
@@ -23,6 +27,7 @@
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
     "style-loader": "^3.3.3",
-    "terser-webpack-plugin": "^5.3.9"
+    "terser-webpack-plugin": "^5.3.9",
+    "eslint": "^8.57.0"
   }
 }

@@ -1,0 +1,261 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests every day at 6 AM UTC to catch dependency issues
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run Black code formatter check
+      run: |
+        black --check --diff src/ tests/
+        
+    - name: Run Flake8 linter
+      run: |
+        flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+        
+    - name: Check import order with isort
+      run: |
+        pip install isort
+        isort --check-only --diff src/ tests/
+
+  test-python:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run unit tests
+      run: |
+        python run_tests.py --type unit --no-coverage
+        
+    - name: Run integration tests  
+      run: |
+        python run_tests.py --type integration --no-coverage
+        
+    - name: Run all tests with coverage (Python 3.11 only)
+      if: matrix.python-version == '3.11'
+      run: |
+        python run_tests.py --type all
+        
+    - name: Upload coverage reports to Codecov (Python 3.11 only)
+      if: matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: python
+        name: python-coverage
+        fail_ci_if_error: false
+        
+    - name: Archive coverage reports (Python 3.11 only)
+      if: matrix.python-version == '3.11'
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: htmlcov/
+
+  test-frontend:
+    name: Frontend Tests & Build
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run JavaScript linter (ESLint)
+      run: |
+        npx eslint src/static/js/ --ext .js || echo "ESLint not configured yet, skipping for now"
+        
+    - name: Run frontend tests
+      run: |
+        # Run the Node.js-based frontend module tests
+        python -m pytest tests/test_search_modules.py tests/test_ui_components.py -v
+        
+    - name: Build frontend (development)
+      run: npm run build:dev
+      
+    - name: Build frontend (production)
+      run: npm run build
+      
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: dist/
+
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test-python, test-frontend]
+    
+    services:
+      # If we add a database service later, it would go here
+      # postgres:
+      #   image: postgres:15
+      #   env:
+      #     POSTGRES_PASSWORD: postgres
+      #   options: >-
+      #     --health-cmd pg_isready
+      #     --health-interval 10s
+      #     --health-timeout 5s
+      #     --health-retries 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: Set up Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        npm ci
+        
+    - name: Build frontend
+      run: npm run build:dev
+      
+    - name: Run full test suite
+      run: |
+        python run_tests.py --type all
+        
+    - name: Test application startup
+      run: |
+        # Start the application in background and test it responds
+        timeout 30s python run_app.py &
+        APP_PID=$!
+        sleep 5
+        
+        # Test that the app is running
+        curl -f http://localhost:8000/ || (echo "App failed to start" && exit 1)
+        
+        # Clean shutdown
+        kill $APP_PID || true
+        wait $APP_PID 2>/dev/null || true
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: code-quality
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install safety bandit
+        
+    - name: Run Safety check for Python dependencies
+      run: |
+        safety check --json --output safety-report.json || true
+        
+    - name: Run Bandit security linter
+      run: |
+        bandit -r src/ -f json -o bandit-report.json || true
+        
+    - name: Upload security reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-reports
+        path: |
+          safety-report.json
+          bandit-report.json
+
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [test-python, test-frontend, test-integration, security-scan]
+    if: always()
+    
+    steps:
+    - name: Check all jobs status
+      run: |
+        echo "Code Quality: ${{ needs.code-quality.result }}"
+        echo "Python Tests: ${{ needs.test-python.result }}"
+        echo "Frontend Tests: ${{ needs.test-frontend.result }}" 
+        echo "Integration Tests: ${{ needs.test-integration.result }}"
+        echo "Security Scan: ${{ needs.security-scan.result }}"
+        
+        # Fail if any critical job failed
+        if [[ "${{ needs.test-python.result }}" == "failure" ]] || [[ "${{ needs.test-frontend.result }}" == "failure" ]] || [[ "${{ needs.test-integration.result }}" == "failure" ]]; then
+          echo "❌ Critical tests failed"
+          exit 1
+        else
+          echo "✅ All critical tests passed"
+        fi

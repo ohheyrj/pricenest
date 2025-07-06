@@ -28,7 +28,7 @@ def run_tests(test_type="all", coverage=True, verbose=True):
         cmd.append("-v")
     
     if coverage:
-        cmd.extend(["--cov=src", "--cov-report=term-missing", "--cov-report=html:htmlcov"])
+        cmd.extend(["--cov=src", "--cov-report=term-missing", "--cov-report=html:htmlcov", "--cov-report=xml"])
     
     # Add test selection based on type
     if test_type == "unit":

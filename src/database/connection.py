@@ -25,9 +25,10 @@ def init_database():
         os.makedirs(db_dir, exist_ok=True)
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     # Create categories table
-    cursor.execute('''
+    cursor.execute(
+        """
         CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -36,10 +37,12 @@ def init_database():
             book_lookup_source TEXT DEFAULT 'auto',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
-    ''')
-    
+    """
+    )
+
     # Create items table
-    cursor.execute('''
+    cursor.execute(
+        """
         CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category_id INTEGER NOT NULL,
@@ -54,10 +57,12 @@ def init_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
         )
-    ''')
-    
+    """
+    )
+
     # Create pending movie searches table
-    cursor.execute('''
+    cursor.execute(
+        """
         CREATE TABLE IF NOT EXISTS pending_movie_searches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category_id INTEGER NOT NULL,
@@ -71,11 +76,13 @@ def init_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
         )
-    ''')
-    
+    """
+    )
+
     # Create price history table (drop and recreate if structure is wrong)
     cursor.execute("DROP TABLE IF EXISTS price_history")
-    cursor.execute('''
+    cursor.execute(
+        """
         CREATE TABLE price_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             item_id INTEGER NOT NULL,
@@ -86,28 +93,29 @@ def init_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (item_id) REFERENCES items (id) ON DELETE CASCADE
         )
-    ''')
-    
+    """
+    )
+
     # Add new columns if they don't exist (for existing databases)
     cursor.execute("PRAGMA table_info(items)")
     columns = [column[1] for column in cursor.fetchall()]
-    
-    if 'director' not in columns:
+
+    if "director" not in columns:
         print("📽️ Adding 'director' column to items table...")
-        cursor.execute('ALTER TABLE items ADD COLUMN director TEXT')
-    
-    if 'year' not in columns:
+        cursor.execute("ALTER TABLE items ADD COLUMN director TEXT")
+
+    if "year" not in columns:
         print("📅 Adding 'year' column to items table...")
-        cursor.execute('ALTER TABLE items ADD COLUMN year INTEGER')
-    
-    if 'external_id' not in columns:
+        cursor.execute("ALTER TABLE items ADD COLUMN year INTEGER")
+
+    if "external_id" not in columns:
         print("🔗 Adding 'external_id' column to items table...")
-        cursor.execute('ALTER TABLE items ADD COLUMN external_id TEXT')
-    
-    if 'last_updated' not in columns:
+        cursor.execute("ALTER TABLE items ADD COLUMN external_id TEXT")
+
+    if "last_updated" not in columns:
         print("🕐 Adding 'last_updated' column to items table...")
-        cursor.execute('ALTER TABLE items ADD COLUMN last_updated TIMESTAMP')
-    
+        cursor.execute("ALTER TABLE items ADD COLUMN last_updated TIMESTAMP")
+
     conn.commit()
     conn.close()
     print("✅ Database initialized")
@@ -116,15 +124,15 @@ def init_database():
 def format_category(row):
     """Format category row for frontend."""
     try:
-        category_type = row['type'] if 'type' in row.keys() else 'general'
+        category_type = row["type"] if "type" in row.keys() else "general"
     except (KeyError, TypeError):
-        category_type = 'general'
-    
+        category_type = "general"
+
     return {
-        'id': row['id'],
-        'name': row['name'],
-        'type': category_type,
-        'bookLookupEnabled': bool(row['book_lookup_enabled']),
-        'bookLookupSource': row['book_lookup_source'],
-        'items': []
+        "id": row["id"],
+        "name": row["name"],
+        "type": category_type,
+        "bookLookupEnabled": bool(row["book_lookup_enabled"]),
+        "bookLookupSource": row["book_lookup_source"],
+        "items": [],
     }

@@ -13,35 +13,33 @@ import tempfile
 @pytest.fixture
 def js_test_runner():
     """Create a temporary JS file to run tests."""
+
     def runner(js_code):
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False) as f:
             # Write test code
             f.write(js_code)
             f.flush()
-            
+
             try:
                 # Run with Node.js
                 result = subprocess.run(
-                    ['node', f.name],
-                    capture_output=True,
-                    text=True,
-                    timeout=5
+                    ["node", f.name], capture_output=True, text=True, timeout=5
                 )
-                
+
                 if result.returncode != 0:
                     raise Exception(f"JavaScript error: {result.stderr}")
-                
+
                 return result.stdout.strip()
             finally:
                 # Clean up
                 os.unlink(f.name)
-    
+
     return runner
 
 
 class TestJavaScriptFunctions:
     """Test pure JavaScript functions from script.js"""
-    
+
     def test_navigation_url_encoding(self, js_test_runner):
         """Test URL encoding for category navigation."""
         js_code = """
@@ -74,10 +72,10 @@ class TestJavaScriptFunctions:
         
         console.log(`${passed}/${tests.length} tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "4/4 tests passed" in output
-    
+
     def test_category_name_encoding(self, js_test_runner):
         """Test category name encoding/decoding."""
         js_code = """
@@ -104,10 +102,10 @@ class TestJavaScriptFunctions:
         
         console.log(`${passed}/${testCases.length} encoding tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "5/5 encoding tests passed" in output
-    
+
     def test_view_mode_logic(self, js_test_runner):
         """Test view mode toggle logic."""
         js_code = """
@@ -132,12 +130,12 @@ class TestJavaScriptFunctions:
         toggleItemView('invalid');
         console.log('After invalid toggle:', currentViewMode);
         """
-        
+
         output = js_test_runner(js_code)
         assert "Initial: grid" in output
         assert "After list toggle: list" in output
         assert "After grid toggle: grid" in output
-    
+
     @pytest.mark.skip(reason="Requires full script.js to be modularized")
     def test_api_client_methods(self, js_test_runner):
         """Test APIClient class methods."""
@@ -147,7 +145,7 @@ class TestJavaScriptFunctions:
 
 class TestURLRouting:
     """Test URL routing logic"""
-    
+
     def test_hash_parsing(self, js_test_runner):
         """Test hash route parsing logic."""
         js_code = """
@@ -187,6 +185,6 @@ class TestURLRouting:
         
         console.log(`${passed}/${tests.length} hash parsing tests passed`);
         """
-        
+
         output = js_test_runner(js_code)
         assert "5/5 hash parsing tests passed" in output
