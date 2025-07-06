@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PriceNest</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-home"></i> PriceNest</h1>
+            <div class="header-actions">
+                <button class="btn btn-info" id="process-pending-btn" style="display: none;">
+                    <i class="fas fa-sync"></i> Process Pending
+                </button>
+                <button class="btn btn-secondary" id="settings-btn">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="btn btn-primary" id="add-category-btn">
+                    <i class="fas fa-plus"></i> Add Category
+                </button>
+            </div>
+        </header>
+
+        <main id="categories-container">
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>Loading your categories...</h3>
+                <p>Please wait while we fetch your saved items</p>
+            </div>
+        </main>
+
+        <div id="category-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="category-modal-title">Add Category</h2>
+                <form id="category-form">
+                    <input type="text" id="category-name" placeholder="Category name (e.g., Books, Films, Electronics)" required>
+                    
+                    <div class="setting-item">
+                        <label for="category-type">Category Type:</label>
+                        <select id="category-type">
+                            <option value="general">General Items</option>
+                            <option value="books">Books</option>
+                            <option value="movies">Movies</option>
+                        </select>
+                        <p class="setting-description">Choose the type of items this category will contain. Books get title/author fields, movies get director/year fields.</p>
+                    </div>
+                    
+                    <div class="book-lookup-settings" style="display: none;">
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="book-lookup-enabled"> Enable book lookup
+                            </label>
+                            <p class="setting-description">Automatically search for book information and prices when adding items.</p>
+                        </div>
+                        
+                        <div class="setting-item" id="book-source-setting" style="display: none;">
+                            <label for="book-lookup-source">Book Search Source:</label>
+                            <select id="book-lookup-source">
+                                <option value="auto">Auto (Try Kobo first, fallback to Google Books)</option>
+                                <option value="google_books">Google Books API only</option>
+                                <option value="kobo">Kobo UK only</option>
+                            </select>
+                            <p class="setting-description">Choose which service to use for book searches. Auto mode provides the best results.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Add Category</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-category">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="item-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="item-modal-title">Add Item</h2>
+                <form id="item-form">
+                    <input type="text" id="item-name" placeholder="Item name" required>
+                    <input type="url" id="item-url" placeholder="Product URL" required>
+                    <input type="number" id="item-price" placeholder="Price" step="0.01" required>
+                    
+                    <!-- Book-specific fields -->
+                    <div class="book-fields" style="display: none;">
+                        <input type="text" id="item-title" placeholder="Book title">
+                        <input type="text" id="item-author" placeholder="Author">
+                        
+                        <div class="kobo-search-section">
+                            <h4>Search for Books</h4>
+                            <div class="search-form">
+                                <input type="text" id="kobo-search-query" placeholder="Search books...">
+                                <button type="button" class="btn btn-info" onclick="app.performKoboSearch()">Search</button>
+                            </div>
+                            <div id="kobo-search-results"></div>
+                        </div>
+                    </div>
+
+                    <!-- Movie-specific fields -->
+                    <div class="movie-fields" style="display: none;">
+                        <input type="text" id="item-title-movie" placeholder="Movie title">
+                        <input type="text" id="item-director" placeholder="Director">
+                        <input type="text" id="item-year" placeholder="Year">
+                        
+                        <div class="movie-search-section">
+                            <h4>Search for Movies</h4>
+                            <div class="search-form">
+                                <input type="text" id="movie-search-query" placeholder="Search movies...">
+                                <button type="button" class="btn btn-info" onclick="app.performMovieSearch()">Search</button>
+                            </div>
+                            <div id="movie-search-results"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Add Item</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-item">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="kobo-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Search Books</h2>
+                <div class="search-form">
+                    <input type="text" id="kobo-modal-search" placeholder="Search for books...">
+                    <button class="btn btn-primary" onclick="app.searchKoboModal()">Search</button>
+                </div>
+                <div id="kobo-modal-results"></div>
+            </div>
+        </div>
+
+        <div id="movie-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Search Movies</h2>
+                <div class="search-form">
+                    <input type="text" id="movie-modal-search" placeholder="Search for movies...">
+                    <button class="btn btn-primary" onclick="app.searchMovieModal()">Search</button>
+                </div>
+                <div id="movie-modal-results"></div>
+            </div>
+        </div>
+
+        <div id="search-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="search-modal-title">Search Items</h2>
+                <form id="search-form">
+                    <input type="text" id="search-query" placeholder="Search..." required>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+                <div id="search-results"></div>
+            </div>
+        </div>
+
+        <div id="csv-import-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Import Movies from CSV</h2>
+                <form id="csv-import-form">
+                    <label for="csv-file-input">Choose CSV file or drag and drop</label>
+                    <input type="file" id="csv-file-input" accept=".csv" required>
+                    
+                    <div class="csv-format-help">
+                        <h4>Expected CSV Format:</h4>
+                        <p>Your CSV should have columns for Title, Director, and Year. Example:</p>
+                        <pre>Title,Director,Year
+Inception,Christopher Nolan,2010
+The Matrix,The Wachowskis,1999
+Interstellar,Christopher Nolan,2014</pre>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Import CSV</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-csv-import">Cancel</button>
+                    </div>
+                </form>
+                
+                <div id="csv-progress" style="display: none;">
+                    <h3>Processing CSV...</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="csv-progress-fill"></div>
+                    </div>
+                    <p id="csv-progress-text">Preparing import...</p>
+                </div>
+                
+                <div id="csv-results" style="display: none;">
+                    <!-- Results will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Settings</h2>
+                <form id="settings-form">
+                    <div class="settings-section">
+                        <h3>Book Lookup Settings</h3>
+                        <div class="setting-item">
+                            <label for="default-book-source">Default Book Search Source:</label>
+                            <select id="default-book-source">
+                                <option value="auto">Auto (Try Kobo first, fallback to Google Books)</option>
+                                <option value="google_books">Google Books API only</option>
+                                <option value="kobo">Kobo UK only</option>
+                            </select>
+                            <p class="setting-description">Choose which service to use for book searches. Auto mode provides the best results.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Database</h3>
+                        <div class="setting-item">
+                            <label for="database-info">Current Database:</label>
+                            <div id="database-info" class="info-display">Loading...</div>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-settings">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Webpack will inject the bundled JavaScript here -->
+</body>
+</html>

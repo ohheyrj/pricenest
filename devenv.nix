@@ -8,6 +8,7 @@
   packages = with pkgs; [
     electron-chromedriver  # ChromeDriver for Selenium tests
     nodejs  # For JavaScript unit tests
+    nodePackages.npm  # Package manager for JavaScript dependencies
   ] ++ (with pkgs.python311Packages; [
     pip
     setuptools

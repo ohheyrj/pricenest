@@ -307,7 +307,43 @@ class APIClient {
 }
 
 // Export for use in other modules
-// Using both CommonJS and ES6 module syntax for compatibility
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = APIClient;
-}
+// Using universal export pattern for CommonJS, ES modules, and browser compatibility
+(function() {
+    'use strict';
+    
+    // Universal export function
+    function universalExport(moduleExport, globalName) {
+        const name = globalName || (moduleExport && moduleExport.name) || 'UnnamedModule';
+        
+        if (typeof module !== 'undefined' && module.exports) {
+            // CommonJS (Node.js, current usage)
+            module.exports = moduleExport;
+        } else if (typeof define === 'function' && define.amd) {
+            // AMD (RequireJS)
+            define(name, [], function() {
+                return moduleExport;
+            });
+        } else if (typeof exports !== 'undefined') {
+            // ES Modules (webpack, modern bundlers)
+            exports[name] = moduleExport;
+            exports.__esModule = true;
+            exports.default = moduleExport;
+        } else {
+            // Browser globals (direct script tags)
+            const root = (function() {
+                if (typeof globalThis !== 'undefined') return globalThis;
+                if (typeof window !== 'undefined') return window;
+                if (typeof global !== 'undefined') return global;
+                if (typeof self !== 'undefined') return self;
+                throw new Error('Unable to locate global object');
+            })();
+            
+            root[name] = moduleExport;
+        }
+        
+        return moduleExport;
+    }
+    
+    // Export APIClient
+    universalExport(APIClient);
+})();
