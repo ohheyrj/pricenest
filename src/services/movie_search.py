@@ -100,9 +100,7 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
 
         else:
             # No results found with any search variation
-            print(
-                f"🔍 DEBUG: No results found after {len(search_queries)} search attempts"
-            )
+            print(f"🔍 DEBUG: No results found after {len(search_queries)} search attempts")
             return {
                 "movies": [],
                 "error": f'No Apple Store results found for "{query}"',
@@ -143,12 +141,8 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
                 "priceSource": price_info["source"],
                 "currency": price_info.get("currency", "GBP"),
                 "artwork": item.get("artworkUrl100", ""),
-                "description": item.get(
-                    "longDescription", item.get("shortDescription", "")
-                ),
-                "trackId": item.get(
-                    "trackId"
-                ),  # Store iTunes track ID for accurate price refresh
+                "description": item.get("longDescription", item.get("shortDescription", "")),
+                "trackId": item.get("trackId"),  # Store iTunes track ID for accurate price refresh
             }
             movies.append(movie)
 
@@ -171,18 +165,11 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
             # Prefer standalone movies over collection/bundle movies
             url = movie.get("url", "").lower()
             description = movie.get("description", "").lower()
-            return (
-                "collection" in url
-                or "bundle" in url
-                or "collection" in description
-                or "bundle" in description
-            )
+            return "collection" in url or "bundle" in url or "collection" in description or "bundle" in description
 
         movies.sort(
             key=lambda movie: (
-                is_collection_movie(
-                    movie
-                ),  # False (standalone) comes before True (collection)
+                is_collection_movie(movie),  # False (standalone) comes before True (collection)
                 get_price_priority(movie["priceSource"]),
                 movie["price"] if movie["price"] else 999,
             )
@@ -264,15 +251,11 @@ def get_movie_by_track_id(track_id: str) -> Dict[str, Any]:
             "priceSource": price_info["source"],
             "currency": price_info.get("currency", "GBP"),
             "artwork": item.get("artworkUrl100", ""),
-            "description": item.get(
-                "longDescription", item.get("shortDescription", "")
-            ),
+            "description": item.get("longDescription", item.get("shortDescription", "")),
             "trackId": item.get("trackId"),
         }
 
-        print(
-            f"✅ DEBUG: Found movie: {title} - £{price_info['price']} ({price_info['source']})"
-        )
+        print(f"✅ DEBUG: Found movie: {title} - £{price_info['price']} ({price_info['source']})")
 
         return {"movie": movie, "error": None}
 
@@ -287,9 +270,7 @@ def get_apple_pricing(item: Dict) -> Dict[str, Any]:
     currency = item.get("currency", "GBP")
 
     # Debug: Log the currency being used
-    print(
-        f"💰 DEBUG: Movie '{item.get('trackName', 'Unknown')}' - Currency: {currency}"
-    )
+    print(f"💰 DEBUG: Movie '{item.get('trackName', 'Unknown')}' - Currency: {currency}")
 
     # Prioritize purchase prices over rental prices
     hd_purchase_price = item.get("trackHdPrice")

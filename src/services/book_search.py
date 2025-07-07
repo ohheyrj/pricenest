@@ -29,9 +29,7 @@ def search_google_books(query: str) -> Dict[str, Any]:
                 continue
 
             price = generate_realistic_price(volume_info, sale_info)
-            kobo_url = (
-                f"https://www.kobo.com/gb/en/search?query={requests.utils.quote(title)}"
-            )
+            kobo_url = f"https://www.kobo.com/gb/en/search?query={requests.utils.quote(title)}"
 
             author = ", ".join(volume_info.get("authors", [])) or "Unknown Author"
             display_name = f"{title} by {author}"

@@ -71,14 +71,10 @@ def migrate_existing_data():
                         name=row["name"],
                         type=row["type"] if "type" in row.keys() else "general",
                         book_lookup_enabled=bool(
-                            row["book_lookup_enabled"]
-                            if "book_lookup_enabled" in row.keys()
-                            else 0
+                            row["book_lookup_enabled"] if "book_lookup_enabled" in row.keys() else 0
                         ),
                         book_lookup_source=(
-                            row["book_lookup_source"]
-                            if "book_lookup_source" in row.keys()
-                            else "auto"
+                            row["book_lookup_source"] if "book_lookup_source" in row.keys() else "auto"
                         ),
                         created_at=(
                             datetime.fromisoformat(row["created_at"])
@@ -106,9 +102,7 @@ def migrate_existing_data():
                         url=row["url"],
                         price=row["price"],
                         bought=bool(row["bought"] if "bought" in row.keys() else 0),
-                        external_id=(
-                            row["external_id"] if "external_id" in row.keys() else None
-                        ),
+                        external_id=(row["external_id"] if "external_id" in row.keys() else None),
                         created_at=(
                             datetime.fromisoformat(row["created_at"])
                             if "created_at" in row.keys() and row["created_at"]
@@ -134,16 +128,8 @@ def migrate_existing_data():
                         item_id=row["item_id"],
                         old_price=row["old_price"],
                         new_price=row["new_price"],
-                        price_source=(
-                            row["price_source"]
-                            if "price_source" in row.keys()
-                            else None
-                        ),
-                        search_query=(
-                            row["search_query"]
-                            if "search_query" in row.keys()
-                            else None
-                        ),
+                        price_source=(row["price_source"] if "price_source" in row.keys() else None),
+                        search_query=(row["search_query"] if "search_query" in row.keys() else None),
                         created_at=(
                             datetime.fromisoformat(row["created_at"])
                             if "created_at" in row.keys() and row["created_at"]
@@ -165,15 +151,9 @@ def migrate_existing_data():
                         title=row["title"],
                         director=row["director"] if "director" in row.keys() else None,
                         year=row["year"] if "year" in row.keys() else None,
-                        csv_row_data=(
-                            row["csv_row_data"]
-                            if "csv_row_data" in row.keys()
-                            else None
-                        ),
+                        csv_row_data=(row["csv_row_data"] if "csv_row_data" in row.keys() else None),
                         status=row["status"] if "status" in row.keys() else "pending",
-                        retry_count=(
-                            row["retry_count"] if "retry_count" in row.keys() else 0
-                        ),
+                        retry_count=(row["retry_count"] if "retry_count" in row.keys() else 0),
                         last_attempted=(
                             datetime.fromisoformat(row["last_attempted"])
                             if "last_attempted" in row.keys() and row["last_attempted"]

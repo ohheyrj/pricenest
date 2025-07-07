@@ -51,15 +51,11 @@ class TestBooksEndpoints:
             assert "Search query is required" in data["error"]
 
     @patch("src.services.book_search.search_kobo_books")
-    def test_search_books_with_kobo_source(
-        self, mock_search, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_search_books_with_kobo_source(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test book search with Kobo source."""
         with sqlalchemy_app.app_context():
             mock_search.return_value = {
-                "books": [
-                    {"title": "Kobo Book", "authors": ["Kobo Author"], "price": 12.99}
-                ],
+                "books": [{"title": "Kobo Book", "authors": ["Kobo Author"], "price": 12.99}],
                 "total": 1,
                 "source": "kobo",
             }
@@ -72,9 +68,7 @@ class TestBooksEndpoints:
             assert data["source"] == "kobo"
 
     @patch("src.services.book_search.search_google_books")
-    def test_search_books_with_exception(
-        self, mock_search, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_search_books_with_exception(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test book search error handling."""
         with sqlalchemy_app.app_context():
             # Mock an exception

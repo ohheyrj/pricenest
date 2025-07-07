@@ -12,9 +12,7 @@ from src.database.connection import get_db_connection
 movies_bp = Blueprint("movies", __name__, url_prefix="/api/movies")
 
 
-def check_for_duplicate_item(
-    cursor, category_id, category_type, title, director=None, year=None, author=None
-):
+def check_for_duplicate_item(cursor, category_id, category_type, title, director=None, year=None, author=None):
     """
     Check if an item with similar details already exists in the database.
     Returns (is_duplicate, existing_item_data) tuple.
@@ -225,9 +223,7 @@ def preview_csv():
         # Verify category exists and is a movie category
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, type, name FROM categories WHERE id = ?", (category_id,)
-        )
+        cursor.execute("SELECT id, type, name FROM categories WHERE id = ?", (category_id,))
         category_row = cursor.fetchone()
 
         if not category_row:
@@ -251,11 +247,7 @@ def preview_csv():
             headers = csv_reader.fieldnames
             if not headers or "title" not in headers:
                 return (
-                    jsonify(
-                        {
-                            "error": 'CSV must have at least a "title" column. Optional: "director", "year"'
-                        }
-                    ),
+                    jsonify({"error": 'CSV must have at least a "title" column. Optional: "director", "year"'}),
                     400,
                 )
 
@@ -316,14 +308,9 @@ def preview_csv():
                     search_results = search_apple_movies(title)
 
                     # Determine status based on search results
-                    if (
-                        search_results.get("movies")
-                        and len(search_results["movies"]) > 0
-                    ):
+                    if search_results.get("movies") and len(search_results["movies"]) > 0:
                         status = "found"
-                        best_match = search_results["movies"][
-                            0
-                        ]  # First result is best match
+                        best_match = search_results["movies"][0]  # First result is best match
                         error_msg = None
                     elif search_results.get("rate_limited"):
                         status = "pending"
@@ -332,10 +319,7 @@ def preview_csv():
                     else:
                         status = "not_found"
                         best_match = None
-                        error_msg = (
-                            search_results.get("error")
-                            or f"No results found for '{title}'"
-                        )
+                        error_msg = search_results.get("error") or f"No results found for '{title}'"
 
                 # Log debug info for CSV preview (only if not duplicate)
                 if not is_duplicate and search_results.get("debug"):
@@ -365,9 +349,7 @@ def preview_csv():
                 # Add duplicate information if applicable
                 if is_duplicate:
                     result_obj["existing_item"] = existing_item
-                    result_obj["duplicate_reason"] = existing_item.get(
-                        "match_reason", "Duplicate found"
-                    )
+                    result_obj["duplicate_reason"] = existing_item.get("match_reason", "Duplicate found")
 
                 preview_results.append(result_obj)
 
@@ -412,14 +394,10 @@ def preview_csv():
         # Calculate summary stats
         total_movies = len(preview_results)
         found_movies = len([r for r in preview_results if r["status"] == "found"])
-        not_found_movies = len(
-            [r for r in preview_results if r["status"] == "not_found"]
-        )
+        not_found_movies = len([r for r in preview_results if r["status"] == "not_found"])
         pending_movies = len([r for r in preview_results if r["status"] == "pending"])
         error_movies = len([r for r in preview_results if r["status"] == "error"])
-        duplicate_movies = len(
-            [r for r in preview_results if r["status"] == "duplicate"]
-        )
+        duplicate_movies = len([r for r in preview_results if r["status"] == "duplicate"])
 
         # Convert preview results to the format expected by the front-end
         formatted_results = []
@@ -441,15 +419,11 @@ def preview_csv():
                 formatted_result.update(
                     {
                         "title": movie.get("title", result["csv_data"]["title"]),
-                        "director": movie.get(
-                            "director", result["csv_data"]["director"]
-                        ),
+                        "director": movie.get("director", result["csv_data"]["director"]),
                         "year": movie.get("year", result["csv_data"]["year"]),
                         "price": movie.get("price"),
                         "url": movie.get("url"),
-                        "artwork": movie.get("artworkUrl")
-                        or movie.get("imageUrl")
-                        or movie.get("artwork"),
+                        "artwork": movie.get("artworkUrl") or movie.get("imageUrl") or movie.get("artwork"),
                         "currency": movie.get("currency", "GBP"),
                     }
                 )
@@ -460,9 +434,7 @@ def preview_csv():
                 formatted_result.update(
                     {
                         "title": existing.get("title", result["csv_data"]["title"]),
-                        "director": existing.get(
-                            "director", result["csv_data"]["director"]
-                        ),
+                        "director": existing.get("director", result["csv_data"]["director"]),
                         "year": existing.get("year", result["csv_data"]["year"]),
                         "price": existing.get("price"),
                         "url": existing.get("url"),
@@ -510,9 +482,7 @@ def import_confirmed():
         # Verify category exists and is a movie category
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, type, name FROM categories WHERE id = ?", (category_id,)
-        )
+        cursor.execute("SELECT id, type, name FROM categories WHERE id = ?", (category_id,))
         category_row = cursor.fetchone()
 
         if not category_row:
@@ -538,10 +508,7 @@ def import_confirmed():
         for i, movie_data in enumerate(confirmed_movies):
             try:
                 # Create display name
-                display_name = (
-                    movie_data.get("name")
-                    or f"{movie_data['title']} ({movie_data.get('year', 'Unknown')})"
-                )
+                display_name = movie_data.get("name") or f"{movie_data['title']} ({movie_data.get('year', 'Unknown')})"
 
                 # Ensure required fields have defaults
                 title = movie_data.get("title", "Unknown Title")
@@ -618,9 +585,7 @@ def process_pending():
 
         if not pending_searches:
             conn.close()
-            return jsonify(
-                {"message": "No pending searches to process", "processed": 0}
-            )
+            return jsonify({"message": "No pending searches to process", "processed": 0})
 
         processed = 0
         imported = 0
@@ -654,10 +619,7 @@ def process_pending():
                 if search_results.get("movies") and len(search_results["movies"]) > 0:
                     # Found movie - import it and mark as completed
                     movie = search_results["movies"][0]
-                    display_name = (
-                        movie.get("name")
-                        or f"{movie['title']} ({movie.get('year', 'Unknown')})"
-                    )
+                    display_name = movie.get("name") or f"{movie['title']} ({movie.get('year', 'Unknown')})"
 
                     cursor.execute(
                         """
@@ -760,18 +722,14 @@ def add_manual_movie():
                 year = int(year)
         except ValueError:
             return (
-                jsonify(
-                    {"error": "Invalid data types for category_id, year, or price"}
-                ),
+                jsonify({"error": "Invalid data types for category_id, year, or price"}),
                 400,
             )
 
         # Verify category exists and is a movie category
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, type, name FROM categories WHERE id = ?", (category_id,)
-        )
+        cursor.execute("SELECT id, type, name FROM categories WHERE id = ?", (category_id,))
         category_row = cursor.fetchone()
 
         if not category_row:
@@ -853,9 +811,7 @@ def import_csv():
         # Verify category exists and is a movie category
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, type, name FROM categories WHERE id = ?", (category_id,)
-        )
+        cursor.execute("SELECT id, type, name FROM categories WHERE id = ?", (category_id,))
         category_row = cursor.fetchone()
 
         if not category_row:
@@ -879,11 +835,7 @@ def import_csv():
             headers = csv_reader.fieldnames
             if not headers or "title" not in headers:
                 return (
-                    jsonify(
-                        {
-                            "error": 'CSV must have at least a "title" column. Optional: "director", "year"'
-                        }
-                    ),
+                    jsonify({"error": 'CSV must have at least a "title" column. Optional: "director", "year"'}),
                     400,
                 )
 
@@ -921,22 +873,15 @@ def import_csv():
                     try:
                         year = int(year_str)
                     except ValueError:
-                        results["errors"].append(
-                            f"Row {i+1}: Invalid year '{year_str}', ignoring"
-                        )
+                        results["errors"].append(f"Row {i+1}: Invalid year '{year_str}', ignoring")
 
                 # Search for movie on Apple Store
                 search_results = search_apple_movies(title)
 
-                if (
-                    not search_results.get("movies")
-                    or len(search_results["movies"]) == 0
-                ):
+                if not search_results.get("movies") or len(search_results["movies"]) == 0:
                     if skip_not_found:
                         results["failed"] += 1
-                        error_msg = search_results.get(
-                            "error", f"No results found for '{title}'"
-                        )
+                        error_msg = search_results.get("error", f"No results found for '{title}'")
                         results["errors"].append(f"Row {i+1}: {error_msg}")
                         continue
                     else:
@@ -955,10 +900,7 @@ def import_csv():
                     movie = search_results["movies"][0]
 
                 # Create display name
-                display_name = (
-                    movie.get("name")
-                    or f"{movie['title']} ({movie.get('year', 'Unknown')})"
-                )
+                display_name = movie.get("name") or f"{movie['title']} ({movie.get('year', 'Unknown')})"
 
                 # Insert into database
                 cursor.execute(
@@ -970,10 +912,8 @@ def import_csv():
                         category_id,
                         display_name,
                         movie["title"],
-                        movie.get("director")
-                        or director,  # Use CSV director if Apple doesn't have one
-                        movie.get("year")
-                        or year,  # Use CSV year if Apple doesn't have one
+                        movie.get("director") or director,  # Use CSV director if Apple doesn't have one
+                        movie.get("year") or year,  # Use CSV year if Apple doesn't have one
                         movie["url"],
                         movie["price"],
                     ),

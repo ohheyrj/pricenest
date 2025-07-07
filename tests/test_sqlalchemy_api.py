@@ -56,9 +56,7 @@ class TestCategoriesAPI:
             assert data["bookLookupSource"] == "google_books"
             assert "id" in data
 
-    def test_create_category_auto_enable_book_lookup(
-        self, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_create_category_auto_enable_book_lookup(self, sqlalchemy_app, sqlalchemy_client):
         """Test that book lookup is auto-enabled for book categories."""
         with sqlalchemy_app.app_context():
             new_category = {
@@ -179,9 +177,7 @@ class TestItemsAPI:
             assert data["bought"] is False
             assert "id" in data
 
-    def test_create_item_with_external_id(
-        self, sqlalchemy_app, sqlalchemy_client, db_session
-    ):
+    def test_create_item_with_external_id(self, sqlalchemy_app, sqlalchemy_client, db_session):
         """Test creating item with external tracking ID."""
         with sqlalchemy_app.app_context():
             category = Category(name="Test Movies", type="movies")
@@ -211,9 +207,7 @@ class TestItemsAPI:
             assert data["director"] == "Test Director"
             assert data["year"] == 2023
 
-    def test_create_item_auto_parse_book_name(
-        self, sqlalchemy_app, sqlalchemy_client, db_session
-    ):
+    def test_create_item_auto_parse_book_name(self, sqlalchemy_app, sqlalchemy_client, db_session):
         """Test auto-parsing of book title and author from name."""
         with sqlalchemy_app.app_context():
             category = Category(name="Books", type="books")
@@ -256,9 +250,7 @@ class TestItemsAPI:
 
             assert response.status_code == 404
 
-    def test_create_item_missing_required_fields(
-        self, sqlalchemy_app, sqlalchemy_client, db_session
-    ):
+    def test_create_item_missing_required_fields(self, sqlalchemy_app, sqlalchemy_client, db_session):
         """Test creating item without required fields."""
         with sqlalchemy_app.app_context():
             category = Category(name="Test", type="general")
@@ -280,9 +272,7 @@ class TestItemsAPI:
             data = json.loads(response.data)
             assert "error" in data
 
-    def test_create_item_invalid_price(
-        self, sqlalchemy_app, sqlalchemy_client, db_session
-    ):
+    def test_create_item_invalid_price(self, sqlalchemy_app, sqlalchemy_client, db_session):
         """Test creating item with invalid price format."""
         with sqlalchemy_app.app_context():
             category = Category(name="Test", type="general")
@@ -309,9 +299,7 @@ class TestItemsAPI:
 class TestPriceHistoryAPI:
     """Test Price History API endpoints with SQLAlchemy."""
 
-    def test_get_price_history_empty(
-        self, sqlalchemy_app, sqlalchemy_client, db_session
-    ):
+    def test_get_price_history_empty(self, sqlalchemy_app, sqlalchemy_client, db_session):
         """Test getting price history for item with no history."""
         with sqlalchemy_app.app_context():
             # Create item without price history
@@ -337,9 +325,7 @@ class TestPriceHistoryAPI:
             assert data["itemName"] == "Test Item"
             assert data["priceHistory"] == []
 
-    def test_get_price_history_with_data(
-        self, sqlalchemy_app, sqlalchemy_client, db_session
-    ):
+    def test_get_price_history_with_data(self, sqlalchemy_app, sqlalchemy_client, db_session):
         """Test getting price history for item with history."""
         with sqlalchemy_app.app_context():
             category = Category(name="Test", type="books")
@@ -390,9 +376,7 @@ class TestPriceHistoryAPI:
             assert first_entry["priceSource"] == "google_books"
             assert "date" in first_entry
 
-    def test_get_price_history_nonexistent_item(
-        self, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_get_price_history_nonexistent_item(self, sqlalchemy_app, sqlalchemy_client):
         """Test getting price history for non-existent item."""
         with sqlalchemy_app.app_context():
             response = sqlalchemy_client.get("/api/items/99999/price-history")
@@ -427,9 +411,7 @@ class TestDatabaseIntegration:
             final_count = Category.query.count()
             assert final_count == initial_count
 
-    def test_relationships_maintained(
-        self, sqlalchemy_app, sqlalchemy_client, db_session
-    ):
+    def test_relationships_maintained(self, sqlalchemy_app, sqlalchemy_client, db_session):
         """Test that relationships are properly maintained."""
         with sqlalchemy_app.app_context():
             # Create category

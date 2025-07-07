@@ -33,9 +33,7 @@ class Category(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
-    items = relationship(
-        "Item", back_populates="category", cascade="all, delete-orphan"
-    )
+    items = relationship("Item", back_populates="category", cascade="all, delete-orphan")
 
     def to_dict(self):
         """Convert to dictionary for API responses."""
@@ -70,9 +68,7 @@ class Item(db.Model):
 
     # Relationships
     category = relationship("Category", back_populates="items")
-    price_history = relationship(
-        "PriceHistory", back_populates="item", cascade="all, delete-orphan"
-    )
+    price_history = relationship("PriceHistory", back_populates="item", cascade="all, delete-orphan")
 
     def to_dict(self):
         """Convert to dictionary for API responses."""
@@ -146,8 +142,6 @@ class PendingMovieSearch(db.Model):
             "year": self.year,
             "status": self.status,
             "retryCount": self.retry_count,
-            "lastAttempted": (
-                self.last_attempted.isoformat() if self.last_attempted else None
-            ),
+            "lastAttempted": (self.last_attempted.isoformat() if self.last_attempted else None),
             "createdAt": self.created_at.isoformat() if self.created_at else None,
         }

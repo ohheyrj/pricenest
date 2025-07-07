@@ -83,9 +83,7 @@ class TestAdditionalCategoryEndpoints:
             assert data["type"] == "books"
             assert data["bookLookupEnabled"] is True
 
-    def test_update_category_book_lookup_settings(
-        self, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_update_category_book_lookup_settings(self, sqlalchemy_app, sqlalchemy_client):
         """Test updating book lookup settings."""
         with sqlalchemy_app.app_context():
             # Get a book category

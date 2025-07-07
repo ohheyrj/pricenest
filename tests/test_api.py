@@ -42,9 +42,7 @@ class TestCategoriesAPI:
 
     def test_create_category_missing_name(self, client):
         """Test creating a category without a name."""
-        response = client.post(
-            "/api/categories", json={}, content_type="application/json"
-        )
+        response = client.post("/api/categories", json={}, content_type="application/json")
         assert response.status_code == 400
 
         data = json.loads(response.data)
@@ -60,9 +58,7 @@ class TestCategoriesAPI:
             "bookLookupSource": "auto",
         }
 
-        create_response = client.post(
-            "/api/categories", json=create_data, content_type="application/json"
-        )
+        create_response = client.post("/api/categories", json=create_data, content_type="application/json")
         assert create_response.status_code == 201
 
         created_category = json.loads(create_response.data)
@@ -97,9 +93,7 @@ class TestCategoriesAPI:
             "bookLookupSource": "auto",
         }
 
-        response = client.put(
-            "/api/categories/999", json=update_data, content_type="application/json"
-        )
+        response = client.put("/api/categories/999", json=update_data, content_type="application/json")
         assert response.status_code == 404
 
     def test_delete_category(self, client):
@@ -112,9 +106,7 @@ class TestCategoriesAPI:
             "bookLookupSource": "auto",
         }
 
-        create_response = client.post(
-            "/api/categories", json=create_data, content_type="application/json"
-        )
+        create_response = client.post("/api/categories", json=create_data, content_type="application/json")
         assert create_response.status_code == 201
 
         created_category = json.loads(create_response.data)
@@ -191,9 +183,7 @@ class TestItemsAPI:
             "price": 10.99,
         }
 
-        create_response = client.post(
-            "/api/categories/1/items", json=create_data, content_type="application/json"
-        )
+        create_response = client.post("/api/categories/1/items", json=create_data, content_type="application/json")
         assert create_response.status_code == 201
 
         created_item = json.loads(create_response.data)
@@ -208,9 +198,7 @@ class TestItemsAPI:
             "price": 15.99,
         }
 
-        update_response = client.put(
-            f"/api/items/{item_id}", json=update_data, content_type="application/json"
-        )
+        update_response = client.put(f"/api/items/{item_id}", json=update_data, content_type="application/json")
         assert update_response.status_code == 200
 
         updated_item = json.loads(update_response.data)
@@ -227,9 +215,7 @@ class TestItemsAPI:
             "price": 99.99,
         }
 
-        response = client.put(
-            "/api/items/999", json=update_data, content_type="application/json"
-        )
+        response = client.put("/api/items/999", json=update_data, content_type="application/json")
         assert response.status_code == 404
 
     def test_toggle_item_bought(self, client):
@@ -264,9 +250,7 @@ class TestItemsAPI:
             "price": 5.99,
         }
 
-        create_response = client.post(
-            "/api/categories/1/items", json=create_data, content_type="application/json"
-        )
+        create_response = client.post("/api/categories/1/items", json=create_data, content_type="application/json")
         assert create_response.status_code == 201
 
         created_item = json.loads(create_response.data)

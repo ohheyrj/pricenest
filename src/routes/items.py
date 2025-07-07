@@ -28,9 +28,7 @@ def create_item(category_id):
         author = data.get("author")
         director = data.get("director")
         year = data.get("year")
-        external_id = data.get("trackId") or data.get(
-            "external_id"
-        )  # Support both trackId and external_id
+        external_id = data.get("trackId") or data.get("external_id")  # Support both trackId and external_id
 
         # For book categories, try to parse title/author if not provided
         if category.type == "books" and not title and not author:
@@ -87,9 +85,7 @@ def update_item(item_id):
         item.author = data.get("author")
         item.director = data.get("director")
         item.year = data.get("year")
-        item.external_id = data.get("trackId") or data.get(
-            "external_id"
-        )  # Support both trackId and external_id
+        item.external_id = data.get("trackId") or data.get("external_id")  # Support both trackId and external_id
         item.last_updated = datetime.utcnow()
 
         # Save changes
@@ -204,10 +200,7 @@ def refresh_item_price(item_id):
                     search_query = item_data["title"] or item_data["name"]
                     if search_query:
                         search_results = search_apple_movies(search_query)
-                        if (
-                            search_results.get("movies")
-                            and len(search_results["movies"]) > 0
-                        ):
+                        if search_results.get("movies") and len(search_results["movies"]) > 0:
                             best_match = search_results["movies"][0]
                             new_price = best_match.get("price", item_data["price"])
                             price_source = best_match.get("priceSource", "apple")
@@ -216,10 +209,7 @@ def refresh_item_price(item_id):
                 search_query = item_data["title"] or item_data["name"]
                 if search_query:
                     search_results = search_apple_movies(search_query)
-                    if (
-                        search_results.get("movies")
-                        and len(search_results["movies"]) > 0
-                    ):
+                    if search_results.get("movies") and len(search_results["movies"]) > 0:
                         best_match = search_results["movies"][0]
                         new_price = best_match.get("price", item_data["price"])
                         price_source = best_match.get("priceSource", "apple")
@@ -300,17 +290,11 @@ def get_item_price_history(item_id):
                     "newPrice": price_history.new_price,
                     "priceSource": price_history.price_source,
                     "searchQuery": price_history.search_query,
-                    "date": (
-                        price_history.created_at.isoformat()
-                        if price_history.created_at
-                        else None
-                    ),
+                    "date": (price_history.created_at.isoformat() if price_history.created_at else None),
                 }
             )
 
-        return jsonify(
-            {"itemId": item_id, "itemName": item.name, "priceHistory": history}
-        )
+        return jsonify({"itemId": item_id, "itemName": item.name, "priceHistory": history})
 
     except Exception as e:
         print(f"Error fetching price history: {e}")

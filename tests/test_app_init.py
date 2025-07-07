@@ -145,9 +145,7 @@ class TestDatabaseInitialization:
         mock_connect.assert_called_once()
 
         # Verify tables were checked
-        mock_cursor.execute.assert_any_call(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        )
+        mock_cursor.execute.assert_any_call("SELECT name FROM sqlite_master WHERE type='table'")
 
     @patch("sqlite3.connect")
     @patch("os.path.exists", return_value=True)

@@ -223,9 +223,7 @@ class TestBookSearchIntegration:
                             "authors": ["Author B"],
                             "pageCount": 300,
                         },
-                        "saleInfo": {
-                            "listPrice": {"amount": 19.99, "currencyCode": "GBP"}
-                        },
+                        "saleInfo": {"listPrice": {"amount": 19.99, "currencyCode": "GBP"}},
                     },
                 ]
             }

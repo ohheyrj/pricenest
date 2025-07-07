@@ -12,9 +12,7 @@ class TestMoviesEndpoints:
     """Test movie endpoints."""
 
     @patch("src.services.movie_search.search_apple_movies")
-    def test_search_movies_success(
-        self, mock_search, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_search_movies_success(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test successful movie search."""
         with sqlalchemy_app.app_context():
             # Mock the search response
@@ -53,9 +51,7 @@ class TestMoviesEndpoints:
             assert "Search query is required" in data["error"]
 
     @patch("src.services.movie_search.search_apple_movies")
-    def test_search_movies_with_exception(
-        self, mock_search, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_search_movies_with_exception(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test movie search error handling."""
         with sqlalchemy_app.app_context():
             # Mock an exception
@@ -112,9 +108,7 @@ class TestMoviesEndpoints:
             data = json.loads(response.data)
             assert "error" in data
 
-    def test_create_batch_search_invalid_category(
-        self, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_create_batch_search_invalid_category(self, sqlalchemy_app, sqlalchemy_client):
         """Test batch search with invalid category."""
         with sqlalchemy_app.app_context():
             batch_data = {"category_id": 99999, "movies": [{"title": "Movie 1"}]}
@@ -134,15 +128,11 @@ class TestMoviesEndpoints:
         with sqlalchemy_app.app_context():
             # Create a pending search
             category = Category.query.filter_by(type="movies").first()
-            pending = PendingMovieSearch(
-                category_id=category.id, title="Test Movie", status="pending"
-            )
+            pending = PendingMovieSearch(category_id=category.id, title="Test Movie", status="pending")
             db.session.add(pending)
             db.session.commit()
 
-            response = sqlalchemy_client.get(
-                f"/api/movies/batch-search/{category.id}/status"
-            )
+            response = sqlalchemy_client.get(f"/api/movies/batch-search/{category.id}/status")
 
             assert response.status_code == 200
             data = json.loads(response.data)
@@ -156,20 +146,14 @@ class TestMoviesEndpoints:
         with sqlalchemy_app.app_context():
             # Create pending searches
             category = Category.query.filter_by(type="movies").first()
-            pending = PendingMovieSearch(
-                category_id=category.id, title="Test Movie", status="pending"
-            )
+            pending = PendingMovieSearch(category_id=category.id, title="Test Movie", status="pending")
             db.session.add(pending)
             db.session.commit()
 
             # Mock search response
-            mock_search.return_value = {
-                "movies": [{"title": "Test Movie", "price": 9.99, "trackId": "12345"}]
-            }
+            mock_search.return_value = {"movies": [{"title": "Test Movie", "price": 9.99, "trackId": "12345"}]}
 
-            response = sqlalchemy_client.post(
-                f"/api/movies/batch-search/{category.id}/process"
-            )
+            response = sqlalchemy_client.post(f"/api/movies/batch-search/{category.id}/process")
 
             assert response.status_code == 200
             data = json.loads(response.data)
@@ -185,22 +169,16 @@ class TestMoviesEndpoints:
         with sqlalchemy_app.app_context():
             # Create pending searches
             category = Category.query.filter_by(type="movies").first()
-            pending = PendingMovieSearch(
-                category_id=category.id, title="Test Movie", status="pending"
-            )
+            pending = PendingMovieSearch(category_id=category.id, title="Test Movie", status="pending")
             db.session.add(pending)
             db.session.commit()
 
-            response = sqlalchemy_client.delete(
-                f"/api/movies/batch-search/{category.id}"
-            )
+            response = sqlalchemy_client.delete(f"/api/movies/batch-search/{category.id}")
 
             assert response.status_code == 200
             data = json.loads(response.data)
             assert data["deleted"] > 0
 
             # Verify searches were deleted
-            remaining = PendingMovieSearch.query.filter_by(
-                category_id=category.id, status="pending"
-            ).count()
+            remaining = PendingMovieSearch.query.filter_by(category_id=category.id, status="pending").count()
             assert remaining == 0

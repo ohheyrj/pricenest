@@ -16,9 +16,7 @@ class TestItemsEndpoints:
         """Test updating an item."""
         with sqlalchemy_app.app_context():
             # Get existing item
-            item = Item.query.filter_by(
-                name="The Great Gatsby by F. Scott Fitzgerald"
-            ).first()
+            item = Item.query.filter_by(name="The Great Gatsby by F. Scott Fitzgerald").first()
             item_id = item.id
 
             # Update the item
@@ -170,9 +168,7 @@ class TestItemsEndpoints:
             assert "error" in data
 
     @patch("src.services.movie_search.get_movie_by_track_id")
-    def test_refresh_item_price_with_track_id(
-        self, mock_get_movie, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_refresh_item_price_with_track_id(self, mock_get_movie, sqlalchemy_app, sqlalchemy_client):
         """Test refreshing movie price with track ID."""
         with sqlalchemy_app.app_context():
             # Get the movie item
@@ -190,9 +186,7 @@ class TestItemsEndpoints:
             }
 
             # Refresh the price
-            response = sqlalchemy_client.patch(
-                f"/api/items/{movie_item.id}/refresh-price"
-            )
+            response = sqlalchemy_client.patch(f"/api/items/{movie_item.id}/refresh-price")
 
             assert response.status_code == 200
             data = json.loads(response.data)
@@ -204,18 +198,14 @@ class TestItemsEndpoints:
 
             # Verify price history was saved
             history = (
-                PriceHistory.query.filter_by(item_id=movie_item.id)
-                .order_by(PriceHistory.created_at.desc())
-                .first()
+                PriceHistory.query.filter_by(item_id=movie_item.id).order_by(PriceHistory.created_at.desc()).first()
             )
             assert history is not None
             assert history.old_price == old_price
             assert history.new_price == 14.99
 
     @patch("src.services.movie_search.search_apple_movies")
-    def test_refresh_item_price_without_track_id(
-        self, mock_search, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_refresh_item_price_without_track_id(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test refreshing movie price without track ID."""
         with sqlalchemy_app.app_context():
             # Create a movie item without external_id
@@ -244,9 +234,7 @@ class TestItemsEndpoints:
             }
 
             # Refresh the price
-            response = sqlalchemy_client.patch(
-                f"/api/items/{movie_item.id}/refresh-price"
-            )
+            response = sqlalchemy_client.patch(f"/api/items/{movie_item.id}/refresh-price")
 
             assert response.status_code == 200
             data = json.loads(response.data)
@@ -258,9 +246,7 @@ class TestItemsEndpoints:
         """Test refreshing book price."""
         with sqlalchemy_app.app_context():
             # Get the book item
-            book_item = Item.query.filter_by(
-                name="The Great Gatsby by F. Scott Fitzgerald"
-            ).first()
+            book_item = Item.query.filter_by(name="The Great Gatsby by F. Scott Fitzgerald").first()
 
             # Mock the book search response
             mock_search.return_value = {
@@ -274,9 +260,7 @@ class TestItemsEndpoints:
             }
 
             # Refresh the price
-            response = sqlalchemy_client.patch(
-                f"/api/items/{book_item.id}/refresh-price"
-            )
+            response = sqlalchemy_client.patch(f"/api/items/{book_item.id}/refresh-price")
 
             assert response.status_code == 200
             data = json.loads(response.data)
@@ -291,9 +275,7 @@ class TestItemsEndpoints:
             old_price = electronics_item.price
 
             # Refresh the price (should not change for general items)
-            response = sqlalchemy_client.patch(
-                f"/api/items/{electronics_item.id}/refresh-price"
-            )
+            response = sqlalchemy_client.patch(f"/api/items/{electronics_item.id}/refresh-price")
 
             assert response.status_code == 200
             data = json.loads(response.data)
@@ -311,9 +293,7 @@ class TestItemsEndpoints:
             assert "error" in data
 
     @patch("src.services.movie_search.get_movie_by_track_id")
-    def test_refresh_price_with_exception(
-        self, mock_get_movie, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_refresh_price_with_exception(self, mock_get_movie, sqlalchemy_app, sqlalchemy_client):
         """Test refresh price error handling."""
         with sqlalchemy_app.app_context():
             movie_item = Item.query.filter_by(name="Inception (2010)").first()
@@ -321,17 +301,13 @@ class TestItemsEndpoints:
             # Mock an exception
             mock_get_movie.side_effect = Exception("API Error")
 
-            response = sqlalchemy_client.patch(
-                f"/api/items/{movie_item.id}/refresh-price"
-            )
+            response = sqlalchemy_client.patch(f"/api/items/{movie_item.id}/refresh-price")
 
             assert response.status_code == 500
             data = json.loads(response.data)
             assert "Failed to refresh item price" in data["error"]
 
-    def test_get_price_history_with_multiple_entries(
-        self, sqlalchemy_app, sqlalchemy_client
-    ):
+    def test_get_price_history_with_multiple_entries(self, sqlalchemy_app, sqlalchemy_client):
         """Test getting price history with multiple entries."""
         with sqlalchemy_app.app_context():
             # Create an item with multiple price history entries

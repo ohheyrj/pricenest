@@ -22,9 +22,7 @@ def js_test_runner():
 
             try:
                 # Run with Node.js
-                result = subprocess.run(
-                    ["node", f.name], capture_output=True, text=True, timeout=5
-                )
+                result = subprocess.run(["node", f.name], capture_output=True, text=True, timeout=5)
 
                 if result.returncode != 0:
                     raise Exception(f"JavaScript error: {result.stderr}")

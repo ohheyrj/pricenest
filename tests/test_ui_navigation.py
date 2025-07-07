@@ -105,9 +105,7 @@ class TestUINavigation:
         driver.get(base_url)
 
         # Wait for categories container to be present
-        categories_container = wait.until(
-            EC.presence_of_element_located((By.ID, "categories-container"))
-        )
+        categories_container = wait.until(EC.presence_of_element_located((By.ID, "categories-container")))
 
         assert categories_container is not None
         assert driver.title == "PriceNest"
@@ -117,14 +115,10 @@ class TestUINavigation:
         driver.get(base_url)
 
         # Wait for and click on first category block
-        category_block = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block"))
-        )
+        category_block = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block")))
 
         # Get category name before clicking
-        category_name = category_block.find_element(
-            By.CSS_SELECTOR, ".category-name"
-        ).text
+        category_name = category_block.find_element(By.CSS_SELECTOR, ".category-name").text
 
         category_block.click()
 
@@ -135,9 +129,7 @@ class TestUINavigation:
         assert f"#/category/{category_name}" in driver.current_url
 
         # Verify we're in category view
-        back_button = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".back-btn"))
-        )
+        back_button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".back-btn")))
         assert back_button is not None
 
     def test_refresh_maintains_category_view(self, driver, base_url, wait):
@@ -145,12 +137,8 @@ class TestUINavigation:
         driver.get(base_url)
 
         # Navigate to a category
-        category_block = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block"))
-        )
-        category_name = category_block.find_element(
-            By.CSS_SELECTOR, ".category-name"
-        ).text
+        category_block = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block")))
+        category_name = category_block.find_element(By.CSS_SELECTOR, ".category-name").text
         category_block.click()
 
         # Wait for category view to load
@@ -163,9 +151,7 @@ class TestUINavigation:
         wait.until(lambda d: f"#/category/{category_name}" in d.current_url)
 
         # Verify category view elements are present
-        back_button = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".back-btn"))
-        )
+        back_button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".back-btn")))
         assert back_button is not None
 
     def test_back_button_returns_to_main_view(self, driver, base_url, wait):
@@ -173,15 +159,11 @@ class TestUINavigation:
         driver.get(base_url)
 
         # Navigate to a category
-        category_block = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block"))
-        )
+        category_block = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block")))
         category_block.click()
 
         # Wait for category view
-        back_button = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".back-btn"))
-        )
+        back_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".back-btn")))
 
         # Click back button
         back_button.click()
@@ -190,9 +172,7 @@ class TestUINavigation:
         wait.until(lambda d: "#" not in d.current_url or d.current_url.endswith("#"))
 
         # Verify we see categories grid
-        categories_grid = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".categories-grid"))
-        )
+        categories_grid = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".categories-grid")))
         assert categories_grid is not None
 
     def test_browser_back_forward_navigation(self, driver, base_url, wait):
@@ -201,9 +181,7 @@ class TestUINavigation:
         initial_url = driver.current_url
 
         # Navigate to a category
-        category_block = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block"))
-        )
+        category_block = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block")))
         category_block.click()
 
         # Wait for URL change
@@ -215,9 +193,7 @@ class TestUINavigation:
         wait.until(lambda d: d.current_url == initial_url)
 
         # Verify we're back at main view
-        categories_grid = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".categories-grid"))
-        )
+        categories_grid = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".categories-grid")))
         assert categories_grid is not None
 
         # Use browser forward button
@@ -225,9 +201,7 @@ class TestUINavigation:
         wait.until(lambda d: d.current_url == category_url)
 
         # Verify we're back in category view
-        back_button = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".back-btn"))
-        )
+        back_button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".back-btn")))
         assert back_button is not None
 
     def test_view_mode_persistence(self, driver, base_url, wait):
@@ -235,9 +209,7 @@ class TestUINavigation:
         driver.get(base_url)
 
         # Navigate to a category with items
-        category_block = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block"))
-        )
+        category_block = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".category-block")))
         category_block.click()
 
         # Wait for category view
@@ -265,26 +237,18 @@ class TestUINavigation:
         """Test navigating directly to a category URL."""
         # First get a valid category name
         driver.get(base_url)
-        category_block = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".category-block"))
-        )
-        category_name = category_block.find_element(
-            By.CSS_SELECTOR, ".category-name"
-        ).text
+        category_block = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".category-block")))
+        category_name = category_block.find_element(By.CSS_SELECTOR, ".category-name").text
 
         # Navigate directly to category URL
         driver.get(f"{base_url}#/category/{category_name}")
 
         # Verify we're in category view
-        back_button = wait.until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".back-btn"))
-        )
+        back_button = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".back-btn")))
         assert back_button is not None
 
         # Verify correct category is shown
-        category_title = driver.find_element(
-            By.CSS_SELECTOR, ".category-detail-info h1"
-        )
+        category_title = driver.find_element(By.CSS_SELECTOR, ".category-detail-info h1")
         assert category_name in category_title.text
 
 

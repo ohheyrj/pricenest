@@ -32,15 +32,11 @@ class TestDatabaseOperations:
             cursor = conn.cursor()
 
             # Check categories table
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='categories'"
-            )
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'")
             assert cursor.fetchone() is not None
 
             # Check items table
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='items'"
-            )
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='items'")
             assert cursor.fetchone() is not None
 
             # Check categories table schema
@@ -187,18 +183,14 @@ class TestDatabaseOperations:
             )
 
             # Verify item was inserted
-            cursor.execute(
-                "SELECT COUNT(*) FROM items WHERE category_id = ?", (category_id,)
-            )
+            cursor.execute("SELECT COUNT(*) FROM items WHERE category_id = ?", (category_id,))
             assert cursor.fetchone()[0] == 1
 
             # Delete the category (should cascade delete the item)
             cursor.execute("DELETE FROM categories WHERE id = ?", (category_id,))
 
             # Verify item was deleted due to foreign key constraint
-            cursor.execute(
-                "SELECT COUNT(*) FROM items WHERE category_id = ?", (category_id,)
-            )
+            cursor.execute("SELECT COUNT(*) FROM items WHERE category_id = ?", (category_id,))
             assert cursor.fetchone()[0] == 0
 
             conn.commit()

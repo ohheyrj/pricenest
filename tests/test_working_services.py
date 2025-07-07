@@ -30,9 +30,7 @@ class TestBookSearchService:
                         "publisher": "Test Publisher",
                         "publishedDate": "2023-01-01",
                         "description": "Test description",
-                        "industryIdentifiers": [
-                            {"type": "ISBN_13", "identifier": "1234567890123"}
-                        ],
+                        "industryIdentifiers": [{"type": "ISBN_13", "identifier": "1234567890123"}],
                         "pageCount": 300,
                         "categories": ["Fiction"],
                         "imageLinks": {"thumbnail": "https://example.com/thumb.jpg"},

@@ -400,9 +400,7 @@ class TestModelQueries:
             db_session.commit()
 
             # Add multiple price history entries
-            for i, (old, new) in enumerate(
-                [(15.99, 12.99), (12.99, 10.99), (10.99, 8.99)]
-            ):
+            for i, (old, new) in enumerate([(15.99, 12.99), (12.99, 10.99), (10.99, 8.99)]):
                 history = PriceHistory(
                     item_id=item.id,
                     old_price=old,
@@ -415,11 +413,7 @@ class TestModelQueries:
             db_session.commit()
 
             # Query price history ordered by date
-            history = (
-                PriceHistory.query.filter_by(item_id=item.id)
-                .order_by(PriceHistory.created_at.asc())
-                .all()
-            )
+            history = PriceHistory.query.filter_by(item_id=item.id).order_by(PriceHistory.created_at.asc()).all()
 
             assert len(history) == 3
             assert history[0].old_price == 15.99

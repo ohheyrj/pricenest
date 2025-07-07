@@ -36,9 +36,7 @@ class TestBookSearchService:
                         "publisher": "Test Publisher",
                         "publishedDate": "2023-01-01",
                         "description": "Test description",
-                        "industryIdentifiers": [
-                            {"type": "ISBN_13", "identifier": "1234567890123"}
-                        ],
+                        "industryIdentifiers": [{"type": "ISBN_13", "identifier": "1234567890123"}],
                         "pageCount": 300,
                         "categories": ["Fiction"],
                         "imageLinks": {"thumbnail": "https://example.com/thumb.jpg"},
@@ -141,9 +139,7 @@ class TestMovieSearchService:
         mock_response.status_code = 200
         mock_response.json.return_value = {
             "resultCount": 1,
-            "results": [
-                {"trackId": 123456, "trackName": "Specific Movie", "trackPrice": 9.99}
-            ],
+            "results": [{"trackId": 123456, "trackName": "Specific Movie", "trackPrice": 9.99}],
         }
         mock_get.return_value = mock_response
 

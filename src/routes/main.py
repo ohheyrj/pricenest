@@ -17,9 +17,7 @@ def index():
 def get_database_config():
     """Get database configuration."""
     try:
-        return jsonify(
-            {"type": "sqlite", "available": ["sqlite", "postgresql", "mysql"]}
-        )
+        return jsonify({"type": "sqlite", "available": ["sqlite", "postgresql", "mysql"]})
     except Exception as e:
         print(f"Error getting database config: {e}")
         return jsonify({"error": "Failed to get database config"}), 500
