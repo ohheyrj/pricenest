@@ -9,7 +9,7 @@ import requests
 from flask import Blueprint, jsonify, request
 
 from src.database.connection import get_db_connection
-from src.models.database import PendingMovieSearch, Item, db
+from src.models.database import Item, PendingMovieSearch, db
 from src.services.movie_search import search_apple_movies
 
 movies_bp = Blueprint("movies", __name__, url_prefix="/api/movies")
