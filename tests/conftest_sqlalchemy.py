@@ -37,9 +37,10 @@ def sqlalchemy_app():
 
         # Get the path to the templates directory
         import os
-        template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src', 'templates'))
-        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src', 'static'))
-        
+
+        template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "templates"))
+        static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "static"))
+
         app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
         app.config["TESTING"] = True
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
