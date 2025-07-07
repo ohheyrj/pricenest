@@ -4,8 +4,9 @@ Validates that CSS custom properties are properly defined and accessible.
 """
 
 import re
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 class TestCSSCustomProperties:
