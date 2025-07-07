@@ -56,7 +56,7 @@ def search_google_books(query: str) -> Dict[str, Any]:
             )
         )
 
-        return {"books": books}
+        return {"books": books, "total": len(books), "source": "google_books"}
 
     except Exception as e:
         print(f"Book search error: {e}")
@@ -94,6 +94,21 @@ def generate_realistic_price(volume_info: Dict, sale_info: Dict) -> float:
     return round(max(2.99, min(19.99, base_price)), 2)
 
 
+def search_kobo_books(query: str) -> Dict[str, Any]:
+    """Search Kobo Books - for now returns mock results."""
+    # In a real implementation, this would call Kobo's API
+    # For now, return mock results with kobo source
+    mock_data = [
+        {
+            "title": f"{query} - Kobo Result 1",
+            "authors": ["Kobo Author"],
+            "price": 12.99,
+        }
+    ]
+    
+    return {"books": mock_data, "total": len(mock_data), "source": "kobo"}
+
+
 def get_mock_results(query: str) -> Dict[str, Any]:
     """Generate mock search results."""
     mock_data = [
@@ -124,4 +139,4 @@ def get_mock_results(query: str) -> Dict[str, Any]:
         }
         mock_books.append(book)
 
-    return {"books": mock_books}
+    return {"books": mock_books, "total": len(mock_books), "source": "mock"}

@@ -13,7 +13,7 @@ from src.models.database import Category, Item, PendingMovieSearch, db
 class TestMoviesEndpoints:
     """Test movie endpoints."""
 
-    @patch("src.services.movie_search.search_apple_movies")
+    @patch("src.routes.movies.search_apple_movies")
     def test_search_movies_success(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test successful movie search."""
         with sqlalchemy_app.app_context():
@@ -52,7 +52,7 @@ class TestMoviesEndpoints:
             assert "error" in data
             assert "Search query is required" in data["error"]
 
-    @patch("src.services.movie_search.search_apple_movies")
+    @patch("src.routes.movies.search_apple_movies")
     def test_search_movies_with_exception(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test movie search error handling."""
         with sqlalchemy_app.app_context():
@@ -142,7 +142,7 @@ class TestMoviesEndpoints:
             assert data["status"]["pending"] >= 1
             assert "total" in data["status"]
 
-    @patch("src.services.movie_search.search_apple_movies")
+    @patch("src.routes.movies.search_apple_movies")
     def test_process_batch_search(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test processing batch search."""
         with sqlalchemy_app.app_context():
@@ -153,7 +153,15 @@ class TestMoviesEndpoints:
             db.session.commit()
 
             # Mock search response
-            mock_search.return_value = {"movies": [{"title": "Test Movie", "price": 9.99, "trackId": "12345"}]}
+            mock_search.return_value = {
+                "movies": [{
+                    "title": "Test Movie", 
+                    "price": 9.99, 
+                    "trackId": "12345",
+                    "url": "https://example.com/test-movie"
+                }],
+                "total": 1
+            }
 
             response = sqlalchemy_client.post(f"/api/movies/batch-search/{category.id}/process")
 

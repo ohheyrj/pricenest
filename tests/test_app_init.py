@@ -124,11 +124,13 @@ class TestDatabaseInitialization:
         mock_conn.cursor.return_value = mock_cursor
         mock_connect.return_value = mock_conn
 
-        # Mock the table check
-        mock_cursor.fetchall.return_value = [
-            ("categories",),
-            ("items",),
-            ("price_history",),
+        # Mock the table check - first call returns table names
+        # Subsequent calls return empty data for actual table content
+        mock_cursor.fetchall.side_effect = [
+            [("categories",), ("items",), ("price_history",)],  # Table names
+            [],  # Empty categories data
+            [],  # Empty items data  
+            [],  # Empty price_history data
         ]
 
         # Create a test app context

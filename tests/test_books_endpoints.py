@@ -51,7 +51,7 @@ class TestBooksEndpoints:
             assert "error" in data
             assert "Search query is required" in data["error"]
 
-    @patch("src.services.book_search.search_kobo_books")
+    @patch("src.routes.books.search_kobo_books")
     def test_search_books_with_kobo_source(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test book search with Kobo source."""
         with sqlalchemy_app.app_context():

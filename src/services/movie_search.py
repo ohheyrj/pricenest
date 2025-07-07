@@ -72,6 +72,7 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
                         print("🚦 DEBUG: Rate limit detected, marking as pending")
                         return {
                             "movies": [],
+                            "total": 0,
                             "error": "Rate limited by Apple Store API (20 calls/minute limit)",
                             "rate_limited": True,
                             "debug": debug_info,
@@ -104,6 +105,7 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
             print(f"🔍 DEBUG: No results found after {len(search_queries)} search attempts")
             return {
                 "movies": [],
+                "total": 0,
                 "error": f'No Apple Store results found for "{query}"',
                 "debug": debug_info,
             }
@@ -178,7 +180,7 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
 
         print(f"🎬 DEBUG: Returning {len(movies)} processed movies")
 
-        return {"movies": movies, "debug": debug_info}
+        return {"movies": movies, "total": len(movies), "debug": debug_info}
 
     except Exception as e:
         print(f"💥 DEBUG: Apple movie search error: {e}")
@@ -192,7 +194,7 @@ def search_apple_movies(query: str) -> Dict[str, Any]:
             }
         )
 
-        return {"movies": [], "error": f"Search failed: {str(e)}", "debug": debug_info}
+        return {"movies": [], "total": 0, "error": f"Search failed: {str(e)}", "debug": debug_info}
 
 
 def get_movie_by_track_id(track_id: str) -> Dict[str, Any]:
@@ -216,7 +218,7 @@ def get_movie_by_track_id(track_id: str) -> Dict[str, Any]:
         results = data.get("results", [])
 
         if not results:
-            return {"movie": None, "error": f"No movie found with track ID {track_id}"}
+            return {"error": "Movie not found"}
 
         item = results[0]
         title = item.get("trackName")
@@ -363,11 +365,11 @@ def get_mock_movie_results(query: str) -> Dict[str, Any]:
         "description": f'Movie information for "{query}" not available from Apple Store',
     }
 
-    return {"movies": [mock_movie]}
+    return {"movies": [mock_movie], "total": 1}
 
 
 def search_tmdb_movies(query: str) -> Dict[str, Any]:
     """Search The Movie Database (TMDB) for additional movie info."""
     # This could be used to get additional metadata
-    # For now, we'll rely on Apple Store data
-    pass
+    # For now, return empty results
+    return {"movies": [], "total": 0}

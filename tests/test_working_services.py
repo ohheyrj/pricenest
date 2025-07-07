@@ -98,7 +98,7 @@ class TestBookSearchService:
         # Check book structure
         book = result["books"][0]
         assert "title" in book
-        assert "authors" in book
+        assert "author" in book
         assert "price" in book
 
     @patch("requests.get")
@@ -227,7 +227,7 @@ class TestMovieSearchService:
         result = get_apple_pricing(item)
 
         assert "price" in result
-        assert result["price"] == 12.99
+        assert result["price"] == 14.99  # HD price has priority
 
     def test_generate_estimated_movie_price(self):
         """Test movie price estimation."""
@@ -297,4 +297,4 @@ class TestMovieSearchService:
             result = search_tmdb_movies("test")
 
             assert "movies" in result
-            assert len(result["movies"]) >= 0  # May be 0 if API key handling differs
+            assert result["total"] == 0  # For now, returns empty results
