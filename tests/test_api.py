@@ -335,5 +335,5 @@ class TestMainRoutes:
         """Test the main index route."""
         response = client.get("/")
         assert response.status_code == 200
-        assert b"Price Tracker" in response.data
+        assert b"PriceNest" in response.data
         assert b"<html" in response.data

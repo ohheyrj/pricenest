@@ -59,13 +59,15 @@ def create_category():
 @categories_bp.route("/api/categories/<int:category_id>", methods=["PUT"])
 def update_category(category_id):
     """Update an existing category."""
+    data = request.get_json()
+    if not data or not data.get("name"):
+        return jsonify({"error": "Category name is required"}), 400
+
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
+    
     try:
-        data = request.get_json()
-        if not data or not data.get("name"):
-            return jsonify({"error": "Category name is required"}), 400
-
-        category = Category.query.get_or_404(category_id)
-
         category.name = data["name"]
         category.type = data.get("type", "general")
         category.book_lookup_enabled = data.get("bookLookupEnabled", False)
@@ -84,9 +86,11 @@ def update_category(category_id):
 @categories_bp.route("/api/categories/<int:category_id>", methods=["DELETE"])
 def delete_category(category_id):
     """Delete a category."""
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
+    
     try:
-        category = Category.query.get_or_404(category_id)
-
         db.session.delete(category)
         db.session.commit()
 
