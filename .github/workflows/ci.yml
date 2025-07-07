@@ -42,7 +42,7 @@ jobs:
         
     - name: Run Flake8 linter
       run: |
-        devenv shell -- flake8 src/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+        devenv shell -- flake8 src/ tests/
         
     - name: Check import order with isort
       run: |
