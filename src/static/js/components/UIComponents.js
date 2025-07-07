@@ -553,6 +553,15 @@ class ConfirmationComponent {
      */
     static show(config) {
         return new Promise((resolve) => {
+            let resolved = false; // Prevent multiple resolves
+            
+            const safeResolve = (value) => {
+                if (!resolved) {
+                    resolved = true;
+                    resolve(value);
+                }
+            };
+            
             const modal = Modal.createDynamic({
                 title: config.title || 'Confirm Action',
                 content: `<p>${config.message}</p>`,
@@ -562,20 +571,22 @@ class ConfirmationComponent {
                         text: config.cancelText || 'Cancel',
                         className: 'btn-secondary',
                         action: () => {
-                            modal.close();
-                            resolve(false);
+                            safeResolve(false);
+                            setTimeout(() => modal.close(), 0);
                         }
                     },
                     {
                         text: config.confirmText || 'Confirm',
                         className: config.type === 'danger' ? 'btn-danger' : 'btn-primary',
                         action: () => {
-                            modal.close();
-                            resolve(true);
+                            safeResolve(true);
+                            setTimeout(() => modal.close(), 0);
                         }
                     }
                 ],
-                onClose: () => resolve(false)
+                onClose: () => {
+                    safeResolve(false);
+                }
             });
             
             modal.open();

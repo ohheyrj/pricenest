@@ -15,7 +15,9 @@ items_bp = Blueprint("items", __name__)
 def create_item(category_id):
     """Create a new item in a category."""
     # Check if category exists first (outside try block to allow 404 to bubble up)
-    category = Category.query.get_or_404(category_id)
+    category = db.session.get(Category, category_id)
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
 
     try:
         data = request.get_json()
@@ -75,7 +77,7 @@ def update_item(item_id):
             return jsonify({"error": "Name, URL, and price are required"}), 400
 
         # Find the item
-        item = Item.query.get(item_id)
+        item = db.session.get(Item, item_id)
         if not item:
             return jsonify({"error": "Item not found"}), 404
 
@@ -109,7 +111,7 @@ def delete_item(item_id):
     """Delete an item."""
     try:
         # Find the item
-        item = Item.query.get(item_id)
+        item = db.session.get(Item, item_id)
         if not item:
             return jsonify({"error": "Item not found"}), 404
 
@@ -130,7 +132,7 @@ def toggle_item_bought(item_id):
     """Toggle the bought status of an item."""
     try:
         # Find the item
-        item = Item.query.get(item_id)
+        item = db.session.get(Item, item_id)
         if not item:
             return jsonify({"error": "Item not found"}), 404
 
@@ -279,7 +281,7 @@ def get_item_price_history(item_id):
     """Get price history for an item."""
     try:
         # Verify item exists
-        item = Item.query.get(item_id)
+        item = db.session.get(Item, item_id)
         if not item:
             return jsonify({"error": "Item not found"}), 404
 
