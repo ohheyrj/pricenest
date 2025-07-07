@@ -105,7 +105,7 @@ def search_kobo_books(query: str) -> Dict[str, Any]:
             "price": 12.99,
         }
     ]
-    
+
     return {"books": mock_data, "total": len(mock_data), "source": "kobo"}
 
 

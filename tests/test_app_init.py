@@ -129,7 +129,7 @@ class TestDatabaseInitialization:
         mock_cursor.fetchall.side_effect = [
             [("categories",), ("items",), ("price_history",)],  # Table names
             [],  # Empty categories data
-            [],  # Empty items data  
+            [],  # Empty items data
             [],  # Empty price_history data
         ]
 

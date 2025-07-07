@@ -975,6 +975,7 @@ def create_batch_search():
 
         # Verify category exists and is a movie category
         from src.models.database import Category
+
         category = Category.query.get(category_id)
         if not category:
             return jsonify({"error": "Category not found"}), 404
@@ -996,19 +997,21 @@ def create_batch_search():
                 title=title,
                 director=movie_data.get("director"),
                 year=movie_data.get("year"),
-                status="pending"
+                status="pending",
             )
             db.session.add(pending)
             created_count += 1
 
         db.session.commit()
 
-        return jsonify({
-            "success": True,
-            "search_id": search_id,
-            "message": "Batch search created successfully",
-            "movie_count": created_count
-        })
+        return jsonify(
+            {
+                "success": True,
+                "search_id": search_id,
+                "message": "Batch search created successfully",
+                "movie_count": created_count,
+            }
+        )
 
     except Exception as e:
         print(f"Batch search creation error: {e}")
@@ -1020,28 +1023,24 @@ def get_batch_search_status(category_id):
     """Get the status of batch searches for a category."""
     try:
         # Count pending searches by status
-        pending_count = PendingMovieSearch.query.filter_by(
-            category_id=category_id, status="pending"
-        ).count()
-        
-        completed_count = PendingMovieSearch.query.filter_by(
-            category_id=category_id, status="completed"
-        ).count()
-        
-        failed_count = PendingMovieSearch.query.filter_by(
-            category_id=category_id, status="failed"
-        ).count()
+        pending_count = PendingMovieSearch.query.filter_by(category_id=category_id, status="pending").count()
+
+        completed_count = PendingMovieSearch.query.filter_by(category_id=category_id, status="completed").count()
+
+        failed_count = PendingMovieSearch.query.filter_by(category_id=category_id, status="failed").count()
 
         total_count = pending_count + completed_count + failed_count
 
-        return jsonify({
-            "status": {
-                "pending": pending_count,
-                "completed": completed_count,
-                "failed": failed_count,
-                "total": total_count
+        return jsonify(
+            {
+                "status": {
+                    "pending": pending_count,
+                    "completed": completed_count,
+                    "failed": failed_count,
+                    "total": total_count,
+                }
             }
-        })
+        )
 
     except Exception as e:
         print(f"Batch search status error: {e}")
@@ -1053,9 +1052,7 @@ def process_batch_search(category_id):
     """Process pending batch searches for a category."""
     try:
         # Get pending searches for this category
-        pending_searches = PendingMovieSearch.query.filter_by(
-            category_id=category_id, status="pending"
-        ).limit(5).all()
+        pending_searches = PendingMovieSearch.query.filter_by(category_id=category_id, status="pending").limit(5).all()
 
         if not pending_searches:
             return jsonify({"message": "No pending searches to process", "processed": 0})
@@ -1067,7 +1064,7 @@ def process_batch_search(category_id):
             try:
                 # Search for the movie
                 search_results = search_apple_movies(pending.title)
-                
+
                 if search_results.get("movies") and len(search_results["movies"]) > 0:
                     # Found movie - create item and mark as completed
                     movie = search_results["movies"][0]
@@ -1081,7 +1078,7 @@ def process_batch_search(category_id):
                         year=movie.get("year") or pending.year,
                         url=movie["url"],
                         price=movie["price"],
-                        bought=False
+                        bought=False,
                     )
                     db.session.add(item)
 
@@ -1101,11 +1098,7 @@ def process_batch_search(category_id):
 
         db.session.commit()
 
-        return jsonify({
-            "success": True,
-            "processed": processed,
-            "imported": imported
-        })
+        return jsonify({"success": True, "processed": processed, "imported": imported})
 
     except Exception as e:
         print(f"Batch search processing error: {e}")
@@ -1117,17 +1110,13 @@ def cancel_batch_search(category_id):
     """Cancel/delete pending batch searches for a category."""
     try:
         # Delete all pending searches for this category
-        deleted_count = PendingMovieSearch.query.filter_by(
-            category_id=category_id, status="pending"
-        ).delete()
+        deleted_count = PendingMovieSearch.query.filter_by(category_id=category_id, status="pending").delete()
 
         db.session.commit()
 
-        return jsonify({
-            "success": True,
-            "deleted": deleted_count,
-            "message": f"Deleted {deleted_count} pending searches"
-        })
+        return jsonify(
+            {"success": True, "deleted": deleted_count, "message": f"Deleted {deleted_count} pending searches"}
+        )
 
     except Exception as e:
         print(f"Batch search cancellation error: {e}")

@@ -23,7 +23,7 @@ def search_books():
             results = search_kobo_books(query)
         else:
             results = search_google_books(query)
-        
+
         return jsonify(results)
 
     except Exception as e:

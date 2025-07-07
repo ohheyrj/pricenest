@@ -154,13 +154,10 @@ class TestMoviesEndpoints:
 
             # Mock search response
             mock_search.return_value = {
-                "movies": [{
-                    "title": "Test Movie", 
-                    "price": 9.99, 
-                    "trackId": "12345",
-                    "url": "https://example.com/test-movie"
-                }],
-                "total": 1
+                "movies": [
+                    {"title": "Test Movie", "price": 9.99, "trackId": "12345", "url": "https://example.com/test-movie"}
+                ],
+                "total": 1,
             }
 
             response = sqlalchemy_client.post(f"/api/movies/batch-search/{category.id}/process")
