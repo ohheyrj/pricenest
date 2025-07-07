@@ -3,10 +3,12 @@ Tests for database operations and data integrity.
 """
 
 import os
-import tempfile
 import sqlite3
+import tempfile
+
 import pytest
-from src.database.connection import get_db_connection, init_database, format_category
+
+from src.database.connection import format_category, get_db_connection, init_database
 
 
 class TestDatabaseOperations:

@@ -2,11 +2,13 @@
 Comprehensive tests for items endpoints to improve coverage.
 """
 
-import pytest
 import json
 from datetime import datetime
-from unittest.mock import patch, MagicMock
-from src.models.database import db, Category, Item, PriceHistory
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from src.models.database import Category, Item, PriceHistory, db
 
 
 class TestItemsEndpoints:

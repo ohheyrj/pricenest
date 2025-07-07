@@ -3,12 +3,14 @@ Integration tests for book search functionality.
 """
 
 import json
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import patch, Mock
+
 from src.services.book_search import (
-    search_google_books,
     generate_realistic_price,
     get_mock_results,
+    search_google_books,
 )
 
 

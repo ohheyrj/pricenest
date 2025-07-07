@@ -3,9 +3,11 @@ SQLAlchemy-based database connection and initialization module.
 """
 
 import os
+
 from flask import Flask
-from src.models.database import db, Category, Item, PriceHistory, PendingMovieSearch
+
 from src.config import Config
+from src.models.database import Category, Item, PendingMovieSearch, PriceHistory, db
 
 
 def init_app(app: Flask):

@@ -3,11 +3,12 @@ JavaScript Search Module Tests
 Tests the new search modules: MovieSearch, BookSearch, and SearchManager
 """
 
-import pytest
-import subprocess
 import json
 import os
+import subprocess
 import tempfile
+
+import pytest
 
 
 @pytest.fixture

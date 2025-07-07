@@ -2,10 +2,12 @@
 Tests for API endpoints using SQLAlchemy models.
 """
 
-import pytest
 import json
-from src.models.database import db, Category, Item, PriceHistory
-from tests.conftest_sqlalchemy import sqlalchemy_app, sqlalchemy_client, db_session
+
+import pytest
+
+from src.models.database import Category, Item, PriceHistory, db
+from tests.conftest_sqlalchemy import db_session, sqlalchemy_app, sqlalchemy_client
 
 
 class TestCategoriesAPI:

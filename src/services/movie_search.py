@@ -2,9 +2,10 @@
 Movie search service for integrating with Apple Store and other APIs.
 """
 
-import requests
-from typing import Dict, Any
 import re
+from typing import Any, Dict
+
+import requests
 
 
 def search_apple_movies(query: str) -> Dict[str, Any]:

@@ -2,9 +2,11 @@
 Tests for main routes and additional category endpoints.
 """
 
-import pytest
 import json
-from src.models.database import db, Category, Item
+
+import pytest
+
+from src.models.database import Category, Item, db
 
 
 class TestMainRoutes:

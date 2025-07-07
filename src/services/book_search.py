@@ -2,8 +2,9 @@
 Book search service for integrating with external APIs.
 """
 
+from typing import Any, Dict
+
 import requests
-from typing import Dict, Any
 
 
 def search_google_books(query: str) -> Dict[str, Any]:

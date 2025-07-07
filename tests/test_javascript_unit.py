@@ -3,11 +3,12 @@ JavaScript Unit Tests using Node.js subprocess
 Tests pure JavaScript functions without browser dependency
 """
 
-import pytest
-import subprocess
 import json
 import os
+import subprocess
 import tempfile
+
+import pytest
 
 
 @pytest.fixture

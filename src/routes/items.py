@@ -2,9 +2,11 @@
 Item management routes using SQLAlchemy.
 """
 
-from flask import Blueprint, request, jsonify
 from datetime import datetime
-from src.models.database import db, Category, Item, PriceHistory
+
+from flask import Blueprint, jsonify, request
+
+from src.models.database import Category, Item, PriceHistory, db
 
 items_bp = Blueprint("items", __name__)
 
@@ -181,8 +183,8 @@ def refresh_item_price(item_id):
         if item_data["categoryType"] == "movies":
             # Import the movie search service
             from src.services.movie_search import (
-                search_apple_movies,
                 get_movie_by_track_id,
+                search_apple_movies,
             )
 
             # If we have a stored track ID, use it for exact lookup

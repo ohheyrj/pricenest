@@ -2,14 +2,16 @@
 Tests for SQLite to SQLAlchemy migration functionality.
 """
 
-import pytest
 import os
-import tempfile
 import sqlite3
+import tempfile
 from datetime import datetime
-from src.models.database import db, Category, Item, PriceHistory
-from src.database.sqlalchemy_connection import migrate_existing_data
+
+import pytest
+
 from src.app import create_app
+from src.database.sqlalchemy_connection import migrate_existing_data
+from src.models.database import Category, Item, PriceHistory, db
 
 
 class TestMigration:
@@ -135,6 +137,7 @@ class TestMigration:
             # Create minimal Flask app without calling create_app() to avoid migration
             from flask import Flask
             from flask_cors import CORS
+
             from src.models.database import db
 
             app = Flask(__name__)
@@ -194,6 +197,7 @@ class TestMigration:
             # Create minimal Flask app
             from flask import Flask
             from flask_cors import CORS
+
             from src.models.database import db
 
             app = Flask(__name__)
@@ -254,6 +258,7 @@ class TestMigration:
             # Create minimal Flask app
             from flask import Flask
             from flask_cors import CORS
+
             from src.models.database import db
 
             app = Flask(__name__)
@@ -310,6 +315,7 @@ class TestMigration:
             # Create minimal Flask app
             from flask import Flask
             from flask_cors import CORS
+
             from src.models.database import db
 
             app = Flask(__name__)
@@ -361,6 +367,7 @@ class TestMigration:
         # Create minimal Flask app
         from flask import Flask
         from flask_cors import CORS
+
         from src.models.database import db
 
         app = Flask(__name__)
@@ -402,6 +409,7 @@ class TestMigration:
             # Create minimal Flask app
             from flask import Flask
             from flask_cors import CORS
+
             from src.models.database import db
 
             app = Flask(__name__)

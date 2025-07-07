@@ -2,7 +2,8 @@
 Book search routes.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
+
 from src.services.book_search import search_google_books
 
 books_bp = Blueprint("books", __name__)

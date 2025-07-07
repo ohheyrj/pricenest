@@ -4,9 +4,11 @@ SQLAlchemy test configuration and fixtures for Price Tracker application.
 
 import os
 import tempfile
+
 import pytest
+
 from src.app import create_app
-from src.models.database import db, Category, Item, PriceHistory, PendingMovieSearch
+from src.models.database import Category, Item, PendingMovieSearch, PriceHistory, db
 
 
 @pytest.fixture
@@ -25,11 +27,12 @@ def sqlalchemy_app():
         # Create a minimal Flask app without calling create_app() to avoid migration
         from flask import Flask
         from flask_cors import CORS
+
         from src.models.database import db
-        from src.routes.main import main_bp
+        from src.routes.books import books_bp
         from src.routes.categories import categories_bp
         from src.routes.items import items_bp
-        from src.routes.books import books_bp
+        from src.routes.main import main_bp
         from src.routes.movies import movies_bp
 
         app = Flask(__name__)

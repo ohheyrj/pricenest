@@ -4,10 +4,12 @@ Movie search routes and functionality.
 
 import csv
 import io
+
 import requests
-from flask import Blueprint, request, jsonify
-from src.services.movie_search import search_apple_movies
+from flask import Blueprint, jsonify, request
+
 from src.database.connection import get_db_connection
+from src.services.movie_search import search_apple_movies
 
 movies_bp = Blueprint("movies", __name__, url_prefix="/api/movies")
 

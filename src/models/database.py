@@ -2,19 +2,20 @@
 SQLAlchemy database setup and models.
 """
 
+from datetime import datetime
+
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import (
+    Boolean,
     Column,
+    DateTime,
+    Float,
+    ForeignKey,
     Integer,
     String,
-    Float,
-    Boolean,
-    DateTime,
     Text,
-    ForeignKey,
 )
 from sqlalchemy.orm import relationship
-from datetime import datetime
 
 # Initialize SQLAlchemy
 db = SQLAlchemy()

@@ -2,10 +2,12 @@
 Tests for SQLAlchemy database models.
 """
 
-import pytest
 from datetime import datetime
-from src.models.database import db, Category, Item, PriceHistory, PendingMovieSearch
-from tests.conftest_sqlalchemy import sqlalchemy_app, db_session
+
+import pytest
+
+from src.models.database import Category, Item, PendingMovieSearch, PriceHistory, db
+from tests.conftest_sqlalchemy import db_session, sqlalchemy_app
 
 
 class TestCategoryModel:

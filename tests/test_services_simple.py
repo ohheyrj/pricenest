@@ -3,8 +3,9 @@ Simple working tests for service layer to improve coverage.
 Focus on testing code paths that exist without complex mocking.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 
 class TestBookSearchServiceSimple:

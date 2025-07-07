@@ -2,10 +2,12 @@
 Tests for movie endpoints.
 """
 
-import pytest
 import json
-from unittest.mock import patch, MagicMock
-from src.models.database import db, Category, Item, PendingMovieSearch
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from src.models.database import Category, Item, PendingMovieSearch, db
 
 
 class TestMoviesEndpoints:

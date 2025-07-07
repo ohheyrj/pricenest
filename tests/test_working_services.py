@@ -3,8 +3,9 @@ Working tests for service layer to improve coverage.
 These tests actually call the real functions with mocked HTTP requests.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 import requests
 
 

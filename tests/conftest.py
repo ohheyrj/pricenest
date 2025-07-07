@@ -3,9 +3,11 @@ Test configuration and fixtures for Price Tracker application.
 """
 
 import os
-import tempfile
-import pytest
 import sqlite3
+import tempfile
+
+import pytest
+
 from src.app import create_app
 
 

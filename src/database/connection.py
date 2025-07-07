@@ -4,8 +4,8 @@ Database connection and initialization module.
 
 import os
 import sqlite3
-from src.config import Config
 
+from src.config import Config
 
 # Configuration
 DATABASE_PATH = Config.DATABASE_PATH

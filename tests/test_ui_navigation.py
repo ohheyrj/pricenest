@@ -3,14 +3,15 @@ UI Navigation Tests using Selenium WebDriver
 Tests for URL routing, view persistence, and navigation functionality
 """
 
+import os
+import time
+
 import pytest
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-import time
-import os
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 
 def get_available_driver():

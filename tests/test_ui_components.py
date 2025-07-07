@@ -3,11 +3,12 @@ UI Components Tests
 Tests the new UI components: Modal, FilterControls, UIComponents, and FormHandler
 """
 
-import pytest
-import subprocess
 import json
 import os
+import subprocess
 import tempfile
+
+import pytest
 
 
 @pytest.fixture

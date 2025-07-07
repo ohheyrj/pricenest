@@ -2,12 +2,14 @@
 Tests for app initialization and database setup.
 """
 
-import pytest
 import os
 import tempfile
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from src.app import create_app
-from src.database.sqlalchemy_connection import init_app, get_db, migrate_existing_data
+from src.database.sqlalchemy_connection import get_db, init_app, migrate_existing_data
 from src.models.database import db
 
 

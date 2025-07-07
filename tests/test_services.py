@@ -2,17 +2,19 @@
 Tests for service layer (book and movie search services).
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 import requests
-from src.services.book_search import search_google_books, get_mock_results
+
+from src.services.book_search import get_mock_results, search_google_books
 from src.services.movie_search import (
-    search_apple_movies,
-    get_movie_by_track_id,
-    get_apple_pricing,
-    generate_estimated_movie_price,
     extract_year_from_release_date,
+    generate_estimated_movie_price,
+    get_apple_pricing,
     get_mock_movie_results,
+    get_movie_by_track_id,
+    search_apple_movies,
     search_tmdb_movies,
 )
 
