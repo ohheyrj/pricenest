@@ -66,7 +66,7 @@ def update_category(category_id):
     category = Category.query.get(category_id)
     if not category:
         return jsonify({"error": "Category not found"}), 404
-    
+
     try:
         category.name = data["name"]
         category.type = data.get("type", "general")
@@ -89,7 +89,7 @@ def delete_category(category_id):
     category = Category.query.get(category_id)
     if not category:
         return jsonify({"error": "Category not found"}), 404
-    
+
     try:
         db.session.delete(category)
         db.session.commit()
