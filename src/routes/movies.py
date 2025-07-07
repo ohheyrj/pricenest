@@ -976,7 +976,7 @@ def create_batch_search():
         # Verify category exists and is a movie category
         from src.models.database import Category
 
-        category = Category.query.get(category_id)
+        category = db.session.get(Category, category_id)
         if not category:
             return jsonify({"error": "Category not found"}), 404
 

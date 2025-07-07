@@ -477,6 +477,12 @@ class PriceNest {
     
     async deleteCategory(categoryIndex) {
         const category = this.categories[categoryIndex];
+        if (!category) {
+            console.error('No category found at index:', categoryIndex);
+            this.showError('Category not found');
+            return;
+        }
+        
         const confirmed = await UIComponents.Confirmation.showDestructive(
             'Are you sure you want to delete this category and all its items?',
             category.name
@@ -486,10 +492,25 @@ class PriceNest {
             try {
                 await this.api.deleteCategory(category.id);
                 this.categories.splice(categoryIndex, 1);
+                
+                // If we're currently viewing the deleted category or a category after it, reset the view
+                if (this.currentCategoryIndex !== null) {
+                    if (this.currentCategoryIndex === categoryIndex) {
+                        // We deleted the category we're currently viewing, go back to main view
+                        this.currentCategoryIndex = null;
+                        this.navigateTo('');
+                        return;
+                    } else if (this.currentCategoryIndex > categoryIndex) {
+                        // Adjust the current category index since we removed a category before it
+                        this.currentCategoryIndex--;
+                    }
+                }
+                
                 this.render();
+                this.showSuccess('Category deleted successfully');
             } catch (error) {
                 console.error('Failed to delete category:', error);
-                this.showError('Failed to delete category');
+                this.showError('Failed to delete category: ' + error.message);
             }
         }
     }
