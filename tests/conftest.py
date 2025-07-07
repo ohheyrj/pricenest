@@ -11,7 +11,7 @@ import pytest
 from src.app import create_app
 
 # Import SQLAlchemy fixtures to make them available
-from tests.conftest_sqlalchemy import sqlalchemy_app, sqlalchemy_client, db_session
+from tests.conftest_sqlalchemy import db_session, sqlalchemy_app, sqlalchemy_client
 
 
 @pytest.fixture
