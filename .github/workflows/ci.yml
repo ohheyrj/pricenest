@@ -30,16 +30,6 @@ jobs:
       with:
         name: devenv
     
-    - name: Cache Nix store
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/nix
-          /nix/store
-        key: nix-${{ runner.os }}-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-        restore-keys: |
-          nix-${{ runner.os }}-
-    
     - name: Install devenv
       run: nix-env -if https://install.devenv.sh/latest
     
@@ -76,16 +66,6 @@ jobs:
       uses: cachix/cachix-action@v14
       with:
         name: devenv
-    
-    - name: Cache Nix store
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/nix
-          /nix/store
-        key: nix-${{ runner.os }}-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-        restore-keys: |
-          nix-${{ runner.os }}-
     
     - name: Install devenv
       run: nix-env -if https://install.devenv.sh/latest
@@ -133,16 +113,6 @@ jobs:
       uses: cachix/cachix-action@v14
       with:
         name: devenv
-    
-    - name: Cache Nix store
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/nix
-          /nix/store
-        key: nix-${{ runner.os }}-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-        restore-keys: |
-          nix-${{ runner.os }}-
     
     - name: Install devenv
       run: nix-env -if https://install.devenv.sh/latest
@@ -213,16 +183,6 @@ jobs:
       with:
         name: devenv
     
-    - name: Cache Nix store
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/nix
-          /nix/store
-        key: nix-${{ runner.os }}-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-        restore-keys: |
-          nix-${{ runner.os }}-
-    
     - name: Install devenv
       run: nix-env -if https://install.devenv.sh/latest
     
@@ -286,16 +246,6 @@ jobs:
       uses: cachix/cachix-action@v14
       with:
         name: devenv
-    
-    - name: Cache Nix store
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cache/nix
-          /nix/store
-        key: nix-${{ runner.os }}-${{ hashFiles('devenv.nix', 'devenv.lock') }}
-        restore-keys: |
-          nix-${{ runner.os }}-
     
     - name: Install devenv
       run: nix-env -if https://install.devenv.sh/latest
