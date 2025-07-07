@@ -31,6 +31,12 @@ def create_category():
 
         name = data["name"]
         category_type = data.get("type", "general")
+
+        # Validate category type
+        valid_types = ["general", "books", "movies"]
+        if category_type not in valid_types:
+            category_type = "general"
+
         book_lookup_enabled = data.get("bookLookupEnabled", False)
         book_lookup_source = data.get("bookLookupSource", "auto")
 

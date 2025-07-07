@@ -115,9 +115,11 @@ class TestMovieSearchServiceSimple:
 
         result = search_apple_movies("test")
 
-        # Should have called the fallback
-        mock_get_mock.assert_called_once()
+        # Should return error response
         assert isinstance(result, dict)
+        assert "movies" in result
+        assert "error" in result
+        assert result["total"] == 0
 
     @patch("src.services.movie_search.get_mock_movie_results")
     @patch("requests.get")

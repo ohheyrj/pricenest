@@ -15,7 +15,7 @@ from src.models.database import Category, Item, PendingMovieSearch, PriceHistory
 def sqlalchemy_app():
     """Create and configure a test Flask application with SQLAlchemy."""
     # Create a temporary database file
-    db_fd, db_path = tempfile.mkstemp()
+    db_fd, db_path = tempfile.mkstemp(suffix=".db")
 
     # Override the database path BEFORE creating the app
     import src.config

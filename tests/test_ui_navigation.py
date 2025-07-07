@@ -4,6 +4,7 @@ Tests for URL routing, view persistence, and navigation functionality
 """
 
 import os
+import socket
 import time
 
 import pytest
@@ -69,6 +70,17 @@ def get_available_driver():
     return None, None
 
 
+def is_server_running(host="localhost", port=8000):
+    """Check if a server is running on the given host and port."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(1)
+            result = sock.connect_ex((host, port))
+            return result == 0
+    except Exception:
+        return False
+
+
 @pytest.fixture(scope="module")
 def driver():
     """Create a WebDriver instance for testing."""
@@ -98,6 +110,10 @@ def wait(driver):
     return WebDriverWait(driver, 10)
 
 
+@pytest.mark.skipif(
+    not is_server_running() or os.getenv("CI") is not None,
+    reason="UI tests require a running server at localhost:8000 and are skipped in CI",
+)
 class TestUINavigation:
     """Test suite for UI navigation functionality."""
 
