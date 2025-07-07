@@ -11,7 +11,7 @@ import pytest
 class TestBooksEndpoints:
     """Test book search endpoints."""
 
-    @patch("src.services.book_search.search_google_books")
+    @patch("src.routes.books.search_google_books")
     def test_search_books_success(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test successful book search."""
         with sqlalchemy_app.app_context():
@@ -31,7 +31,7 @@ class TestBooksEndpoints:
                 "source": "google_books",
             }
 
-            response = sqlalchemy_client.get("/api/books/search?q=test")
+            response = sqlalchemy_client.get("/api/books/search?query=test")
 
             assert response.status_code == 200
             data = json.loads(response.data)
@@ -68,14 +68,14 @@ class TestBooksEndpoints:
             assert data["books"][0]["title"] == "Kobo Book"
             assert data["source"] == "kobo"
 
-    @patch("src.services.book_search.search_google_books")
+    @patch("src.routes.books.search_google_books")
     def test_search_books_with_exception(self, mock_search, sqlalchemy_app, sqlalchemy_client):
         """Test book search error handling."""
         with sqlalchemy_app.app_context():
             # Mock an exception
             mock_search.side_effect = Exception("API Error")
 
-            response = sqlalchemy_client.get("/api/books/search?q=test")
+            response = sqlalchemy_client.get("/api/books/search?query=test")
 
             assert response.status_code == 500
             data = json.loads(response.data)
