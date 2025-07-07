@@ -119,7 +119,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
+# package-lock.json - needed for npm ci in CI/CD
 yarn.lock
 
 # Webpack build output

@@ -236,7 +236,7 @@ jobs:
         
     - name: Install security tools
       run: |
-        devenv shell -- pip install safety bandit
+        devenv shell -- pip install --user safety bandit
         
     - name: Run Safety check for Python dependencies
       run: |
