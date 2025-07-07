@@ -439,7 +439,13 @@ class Modal {
             config.buttons.forEach((button, index) => {
                 if (button.action && button.action !== 'close') {
                     const buttonElement = modalElement.querySelectorAll('.modal-footer button')[index];
-                    buttonElement.addEventListener('click', () => button.action(modal));
+                    if (buttonElement) {
+                        buttonElement.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            button.action(modal);
+                        });
+                    }
                 }
             });
         }
