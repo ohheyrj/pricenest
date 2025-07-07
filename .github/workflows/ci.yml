@@ -73,17 +73,13 @@ jobs:
     - name: Build development environment
       run: devenv shell -- echo "Environment ready"
         
-    - name: Run unit tests
+    - name: Run tests
       run: |
-        devenv shell -- python run_tests.py --type unit --no-coverage
-        
-    - name: Run integration tests  
-      run: |
-        devenv shell -- python run_tests.py --type integration --no-coverage
+        devenv shell -- python -m pytest tests/ -v --no-cov -x
         
     - name: Run all tests with coverage
       run: |
-        devenv shell -- python run_tests.py --type all
+        devenv shell -- python -m pytest tests/ --cov=src --cov-report=xml --cov-report=term
         
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4
@@ -193,7 +189,7 @@ jobs:
       
     - name: Run full test suite
       run: |
-        devenv shell -- python run_tests.py --type all
+        devenv shell -- python -m pytest tests/ -v
         
     - name: Test application startup
       run: |
