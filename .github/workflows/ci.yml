@@ -75,7 +75,7 @@ jobs:
         
     - name: Run tests
       run: |
-        devenv shell -- python -m pytest tests/ -v --no-cov -k "not test_get_categories" --tb=short
+        devenv shell -- python -m pytest tests/ -v --no-cov --tb=short
         
     - name: Run all tests with coverage
       run: |
@@ -217,16 +217,41 @@ jobs:
     - name: Test application startup
       run: |
         # Start the application in background and test it responds
-        devenv shell -- bash -c "timeout 30s python run_app.py &
-        APP_PID=$!
-        sleep 5
+        devenv shell -- bash -c "
+        echo '🚀 Starting application in background...'
+        python run_app.py > app.log 2>&1 &
+        APP_PID=\$!
+        echo \"Application PID: \$APP_PID\"
         
-        # Test that the app is running
-        curl -f http://localhost:8000/ || (echo 'App failed to start' && exit 1)
+        # Wait for app to start
+        echo '⏳ Waiting for application to start...'
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/ > /dev/null 2>&1; then
+            echo '✅ Application is responding'
+            break
+          fi
+          echo \"Attempt \$i/30: Application not ready yet, waiting...\"
+          sleep 1
+        done
+        
+        # Final test
+        if curl -f http://localhost:8000/ > /dev/null 2>&1; then
+          echo '✅ Application startup test passed'
+          EXIT_CODE=0
+        else
+          echo '❌ Application startup test failed'
+          echo '📋 Application logs:'
+          cat app.log || echo 'No logs available'
+          EXIT_CODE=1
+        fi
         
         # Clean shutdown
-        kill $APP_PID || true
-        wait $APP_PID 2>/dev/null || true"
+        echo '🛑 Shutting down application...'
+        kill \$APP_PID 2>/dev/null || true
+        wait \$APP_PID 2>/dev/null || true
+        
+        exit \$EXIT_CODE
+        "
 
   security-scan:
     name: Security Scanning
