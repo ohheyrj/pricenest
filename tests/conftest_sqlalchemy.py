@@ -36,8 +36,6 @@ def sqlalchemy_app():
         from src.routes.movies import movies_bp
 
         # Get the path to the templates directory
-        import os
-
         template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "templates"))
         static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src", "static"))
 
