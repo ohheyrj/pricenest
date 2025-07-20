@@ -16,7 +16,7 @@ python-dotenv==1.0.0
 # Testing and development tools
 pytest==7.4.3
 pytest-cov==4.1.0
-black==23.9.1
+black==23.12.1
 flake8==6.1.0
 
 # UI Testing
