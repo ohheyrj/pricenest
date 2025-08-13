@@ -1,6 +1,6 @@
 # Core Flask framework
 Flask==2.3.3
-Flask-CORS==4.0.0
+Flask-CORS==4.0.2
 
 # Database ORM
 SQLAlchemy==2.0.23
