@@ -11,7 +11,7 @@ Alembic==1.13.1
 requests==2.31.0
 
 # Environment configuration
-python-dotenv==1.0.0
+python-dotenv==1.2.3
 
 # Testing and development tools
 pytest==7.4.3
