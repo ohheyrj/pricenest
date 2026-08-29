@@ -20,4 +20,4 @@ black==23.9.1
 flake8==6.1.0
 
 # UI Testing
-selenium==4.15.2
+selenium==4.48.0
